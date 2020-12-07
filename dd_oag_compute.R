@@ -11,7 +11,8 @@ dd_oag_compute  <- function(data, age_span = c(1, 5)){
   require(tidyverse)
   
   # define standard abridged age groups
-  load("data/std_ages.RData")
+  std_ages <- std_age_function()
+  
   age_std <- std_ages %>% 
     filter(abridged == TRUE) %>% 
     select(-abridged, -complete)
