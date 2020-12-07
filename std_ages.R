@@ -1,4 +1,6 @@
 
+std_age_function <- function() {
+  
 # Standard age groups
 
 # create a data frame with all of the standard age groups we would expect for abridged
@@ -37,7 +39,10 @@ library(tidyverse)
            AgeSort = c(seq(1,28,1), seq(158,185,1), seq(29,157,1))) %>% 
     arrange(AgeSort)
   
-  save(std_ages , file="data/std_ages.RData")
+  return(std_ages)
+  
+}
+
   
   
 

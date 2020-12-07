@@ -18,9 +18,9 @@
 # ---------
 dd_age_standard<- function(data, abridged = TRUE){ 
   require(tidyverse)
-  
+
   # get stanadard age groups
-    load("data/std_ages.RData")
+    std_ages <- std_age_function()
     
     if (abridged) {
       std_ages <- std_ages %>% 
