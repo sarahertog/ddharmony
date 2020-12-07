@@ -17,7 +17,8 @@ dd_single2abridged  <- function(data){ #input should be a dataset by single year
   require(tidyverse)
   
   # define standard abridged age groups
-  load("data/std_ages.RData")
+  std_ages <- std_age_function()
+  
   age_std <- std_ages %>% 
     filter(abridged == TRUE) %>% 
     select(-abridged, -complete)
