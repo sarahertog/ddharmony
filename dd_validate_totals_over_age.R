@@ -1,0 +1,70 @@
+#--------------------------------------------------
+# check if Totals after having standardized age 
+# series are equal or different from previous values
+
+# ---------
+# Function
+# ---------
+dd_validate_totals_over_age <- function(data){
+  
+  out.data <- NULL
+  
+  for (sex in unique(data$SexID)) {
+    
+    df_abr <- data %>% 
+      filter(SexID == sex & abridged == TRUE)
+    
+    total_reported_abr <- df_abr$DataValue[df_abr$AgeLabel == "Total"]
+    total_computed_abr <- sum(df_abr$DataValue[df_abr$AgeSpan %in% c(-1,-2, 5) & df_abr$AgeLabel != "Total"])
+    
+    
+    if (!is_empty(total_reported_abr) & !is_empty(total_computed_abr)) {
+      # if computed is greater than reported by less than 2.5 % of reported, then replace reported with computed
+      diff <- total_computed_abr - total_reported_abr
+      if (diff > 0 & abs(diff/total_reported_abr) < .025) {
+        df_abr$DataValue[df_abr$AgeLabel == "Total"] <- total_computed_abr
+      }
+      # if computed is less than reported, then add difference to "Unknown" age
+      if (diff < 0 & abs(diff/total_reported_abr) < .025) {
+        df_abr$DataValue[df_abr$AgeLabel == "Unknown"] <- df_abr$DataValue[df_abr$AgeLabel == "Unknown"] + 
+                                                                             (total_reported_abr-total_computed_abr)
+      }
+      if (abs(diff/total_reported_abr) >= .025) {
+        df_abr$note[df_abr$AgeLabel == "Total"] <- "Reported total differs from sum over age by more than 2.5%"
+      }
+      
+    }
+    
+    df_cpl <- data %>% 
+      filter(SexID == sex & complete == TRUE)
+    
+    total_reported_cpl <- df_cpl$DataValue[df_cpl$AgeLabel == "Total"]
+    total_computed_cpl <- sum(df_cpl$DataValue[df_cpl$AgeLabel != "Total"])
+    
+    if (!is_empty(total_reported_cpl) & !is_empty(total_computed_cpl)) {
+      
+      # if computed is greater than reported by less than 2.5 % of reported, then replace reported with computed
+      diff <- total_computed_cpl - total_reported_cpl
+      if (diff > 0 & abs(diff/total_reported_cpl) < .025) {
+        df_cpl$DataValue[df_cpl$AgeLabel == "Total"] <- total_computed_cpl
+      }
+      # if computed is less than reported, then add difference to "Unknown" age
+      if (diff < 0 & abs(diff/total_reported_cpl) < .025) {
+        df_cpl$DataValue[df_cpl$AgeLabel == "Unknown"] <- df_cpl$DataValue[df_cpl$AgeLabel == "Unknown"] + 
+          (total_reported_cpl-total_computed_cpl)
+      }
+      if (abs(diff/total_reported_cpl) >= .025) {
+        df_cpl$note[df_cpl$AgeLabel == "Total"] <- "Reported total differs from sum over age by more than 2.5%"
+      }                                                          
+      
+    }
+    
+    out.data <- rbind(out.data, df_abr, df_cpl)
+    
+  }
+  
+  return(out.data)
+}
+
+
+  
