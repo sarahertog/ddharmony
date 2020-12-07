@@ -16,7 +16,7 @@ dd_rank_id <- function(indata){
            num.serie = length(unique(abridged)))
   
   # If there is more than 1 id for each country-census year:
-  if(length(unique(out$num.id))>1){
+  if (length(unique(out$num.id))>1) {
     out1 <-  out %>% 
       filter(num.id>=2)%>% 
       # First: Prefer ids that have both abridged and complete available
@@ -37,7 +37,8 @@ dd_rank_id <- function(indata){
       select(-maxage) %>% 
       ungroup()
     
-  }  
+  } else { out1 <- NULL }
+  
   # Only 1 id for each country-census year:
   out2 <- out %>% 
     filter(num.id == 1)
