@@ -11,7 +11,7 @@ DDextract_CensusPopCounts <- function(locid, start_year, end_year) {
                                    dataProcessIds = 2, # Census
                                    indicatorIds = 58,# Population by age and sex (abridged)
                                    startYear = start_year,
-                                   endYear = end_year +1,
+                                   endYear = end_year,
                                    locAreaTypeIds = 2, # whole area (as opposed to urban/rural or some other sub-national unit)
                                    subGroupIds = 2) # Total or all groups (as opposed to some population
   }, error=function(e){cat("Error in file", conditionMessage(e), "\n")})
@@ -27,7 +27,7 @@ DDextract_CensusPopCounts <- function(locid, start_year, end_year) {
                                    dataProcessIds = 2, # Census
                                    indicatorIds = 60,# Population by age and sex (Complete by single years of age)
                                    startYear = start_year,
-                                   endYear = end_year +1,
+                                   endYear = end_year,
                                    locAreaTypeIds = 2, # whole area (as opposed to urban/rural or some other sub-national unit)
                                    subGroupIds = 2) # Total or all groups (as opposed to some population
   }, error=function(e){cat("Error in file", conditionMessage(e), "\n")})
