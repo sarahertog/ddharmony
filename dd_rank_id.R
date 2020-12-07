@@ -11,33 +11,41 @@ dd_rank_id <- function(indata){
   # Check id duplication for each country-census year
   out <-  out %>% 
     group_by(ReferencePeriod) %>% 
-    mutate(num.id = length(unique(id)), 
-           minDRsort = min(unique(out$DataReliabilitySort)),
-           num.serie = length(unique(abridged)))
+    mutate(num.id = length(unique(id))) %>% 
+    ungroup()
   
   # If there is more than 1 id for each country-census year:
   if (length(unique(out$num.id))>1) {
     out1 <-  out %>% 
-      filter(num.id>=2)%>% 
+      filter(num.id>=2) %>% 
+      group_by(id) %>% 
+      mutate(num.serie = length(unique(abridged)),
+             maxage = max(AgeStart)) %>% 
+      ungroup %>% 
+      
       # First: Prefer ids that have both abridged and complete available
-      filter(num.serie>1) %>% 
-      # Second:Prefer better DataReliability (the minimum of the DataReliabilitySort field)
-      filter(DataReliabilitySort==minDRsort) %>% 
-      # Third: Prefer StatisticalConceptName == “De-facto” over “De-jure”
-      filter(StatisticalConceptName=='De-facto') %>% 
-      ungroup() %>%
-      # Fourth: Prefer the series with the highest open age group
-      group_by(ReferencePeriod, id) %>% # one max age for each ref period and id
-      mutate(maxage = max(AgeStart)) %>% 
-      filter(maxage == max(maxage)) %>% 
-      ungroup() %>% 
-      # Fifth: Prefer DataSourceName = "Demographic Yearbook"
       group_by(ReferencePeriod) %>% 
-      filter(DataSourceName=="Demographic Yearbook") %>% 
-      select(-maxage) %>% 
-      ungroup()
+      filter(num.serie == max(num.serie)) %>% 
+      
+      # Second:Prefer better DataReliability (the minimum of the DataReliabilitySort field)
+      filter(DataReliabilitySort == min(DataReliabilitySort)) %>% 
+      
+      # Third: Prefer StatisticalConceptName == “De-facto” over “De-jure”
+      mutate(has_de_facto = ifelse('De-facto' %in% StatisticalConceptName, TRUE, FALSE),
+             keep_de_facto = ifelse(has_de_facto == TRUE, 'De-facto', StatisticalConceptName)) %>% 
+      filter(StatisticalConceptName == keep_de_facto) %>% 
+      
+      # Fourth: Prefer the series with the highest open age group
+      filter(maxage == max(maxage)) %>% 
+      
+      # Fifth: Prefer DataSourceName = "Demographic Yearbook"
+      mutate(has_dyb = ifelse('Demographic Yearbook' %in% DataSourceName, TRUE, FALSE),
+             keep_dyb = ifelse(has_dyb == TRUE, 'Demographic Yearbook', DataSourceName)) %>% 
+      filter(DataSourceName == keep_dyb) %>% 
+      ungroup() %>% 
+      select(-num.serie, -maxage, -has_de_facto, -keep_de_facto, -has_dyb, -keep_dyb) 
     
-  } else { out1 <- NULL }
+  }  else { out1 <- NULL }
   
   # Only 1 id for each country-census year:
   out2 <- out %>% 
@@ -47,7 +55,7 @@ dd_rank_id <- function(indata){
   
   outdata <- outdata %>% 
     arrange(ReferencePeriod) %>% 
-    select(!c(num.id,minDRsort,num.serie))
+    select(!c(num.id))
   
 } # end function
 
