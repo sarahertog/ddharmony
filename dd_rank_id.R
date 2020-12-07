@@ -15,7 +15,7 @@ dd_rank_id <- function(indata){
     ungroup()
   
   # If there is more than 1 id for each country-census year:
-  if (length(unique(out$num.id))>1) {
+  if (max(out$num.id)>1) {
     out1 <-  out %>% 
       filter(num.id>=2) %>% 
       group_by(id) %>% 
