@@ -242,7 +242,8 @@ DDharmonize_validate_PopCounts <- function(locid, times) {
   }
   
   pop_std_valid <- do.call(rbind, pop_std_valid) %>% 
-    mutate(series = ifelse(abridged == TRUE, "abridged", "complete"))
+    mutate(five_year = abridged == TRUE & AgeSpan %in% c(-1,5),
+           abridged = abridged == TRUE & AgeLabel != "0-4")
   
   
   # 10.  When there is more than one id for a given census year, select the most authoritative
@@ -251,7 +252,7 @@ DDharmonize_validate_PopCounts <- function(locid, times) {
   
   out_all <- pop_valid_id %>% 
     select(id, LocID, LocName, ReferencePeriod, TimeMid, DataSourceName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, series, abridged, complete, SexID, AgeStart, AgeEnd, 
+           DataTypeName, DataReliabilityName, five_year, abridged, complete, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue, note)
   
   return(out_all)
