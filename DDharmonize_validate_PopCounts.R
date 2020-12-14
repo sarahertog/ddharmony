@@ -24,6 +24,10 @@ DDharmonize_validate_PopCounts <- function(locid, times) {
   dd_extract <- DDextract_CensusPopCounts(locid      = locid,
                                           start_year = times[1],
                                           end_year   = times[length(times)]) %>% 
+    # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
+    # or “Direct (standard abridged age groups computed - Unknown redistributed)”
+    filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
+           DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
     mutate(id = paste(ReferencePeriod, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
 
