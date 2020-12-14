@@ -273,7 +273,8 @@ DDharmonize_validate_PopCounts <- function(locid, times) {
            complete = FALSE,
            non_standard = TRUE,
            note = "Not harmonized or validated due to non-standard age groups") %>% 
-    arrange(id, SexID, AgeSort)
+    arrange(id, SexID, AgeSort) %>% 
+    distinct()
   
   out_all <- rbind(out_all, skipped) %>% 
     arrange(id, SexID, abridged, AgeSort)
