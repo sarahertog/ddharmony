@@ -255,9 +255,28 @@ DDharmonize_validate_PopCounts <- function(locid, times) {
   pop_valid_id <- pop_std_valid %>% dd_rank_id 
   
   out_all <- pop_valid_id %>% 
+    mutate(non_standard = FALSE) %>% 
     select(id, LocID, LocName, ReferencePeriod, TimeMid, DataSourceName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, five_year, abridged, complete, SexID, AgeStart, AgeEnd, 
+           DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue, note)
+  
+  # 11. Look for censuses years that are in raw data, but not in output
+  #     If there are series with non-standard age groups, then add these to output as well
+  
+  skipped <- dd_extract %>% 
+    filter(!(ReferencePeriod %in% out_all$ReferencePeriod)) %>% 
+    select(id, LocID, LocName, ReferencePeriod, TimeMid, DataSourceName, StatisticalConceptName,
+           DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
+           AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
+    mutate(five_year = FALSE,
+           abridged = FALSE,
+           complete = FALSE,
+           non_standard = TRUE,
+           note = "Not harmonized or validated due to non-standard age groups") %>% 
+    arrange(id, SexID, AgeSort)
+  
+  out_all <- rbind(out_all, skipped) %>% 
+    arrange(id, SexID, abridged, AgeSort)
   
   return(out_all)
   
