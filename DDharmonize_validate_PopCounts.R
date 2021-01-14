@@ -6,7 +6,10 @@
 ## modified 12 Jan 2021 to retain keys for bulk upload to DemoData
 ## use retainKeys = TRUE to include these key fields in the function output
 
-DDharmonize_validate_PopCounts <- function(locid, times, retainKeys = FALSE) {
+DDharmonize_validate_PopCounts <- function(locid, 
+                                           times, 
+                                           retainKeys = FALSE, 
+                                           server = "https://popdiv.dfs.un.org/Demodata/Web/index.html#") {
   
   require(DDSQLtools)
   require(DemoTools)
@@ -18,8 +21,8 @@ DDharmonize_validate_PopCounts <- function(locid, times, retainKeys = FALSE) {
 ## PART 1: EXTRACT CENSUS POPULATION COUNTS FROM DEMO DATA AND HARMONIZE TO STANDARD 
 ## ABRIDGED AND COMPLETE AGE GROUPS, BY SERIES
 
-  ## development server for UNPD testing (paperspace) DemoData api
-  options(unpd_server = "http://74.82.31.177/DemoData/api/")
+  ## UNPD server housing DemoData
+  options(unpd_server = server)
   
 # Extract all census population counts for a given country over the period specified in times
   dd_extract <- DDextract_CensusPopCounts(locid      = locid,
