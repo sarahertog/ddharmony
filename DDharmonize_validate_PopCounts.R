@@ -5,11 +5,14 @@
 ## THE SERIES, WHERE APPLICABLE
 ## modified 12 Jan 2021 to retain keys for bulk upload to DemoData
 ## use retainKeys = TRUE to include these key fields in the function output
+## modified 14 Jan 2021 to allow user to specify api server address in server parameter
+## Valencia: "https://popdiv.dfs.un.org/DemoData/api/" is default
+## Paperspace: "http://74.82.31.177/DemoData/api/"
 
 DDharmonize_validate_PopCounts <- function(locid, 
                                            times, 
                                            retainKeys = FALSE, 
-                                           server = "https://popdiv.dfs.un.org/Demodata/Web/index.html#") {
+                                           server = "https://popdiv.dfs.un.org/DemoData/api/") {
   
   require(DDSQLtools)
   require(DemoTools)
@@ -127,6 +130,7 @@ DDharmonize_validate_PopCounts <- function(locid,
              LocName                = pop_raw$LocName[1],
              LocID                  = pop_raw$LocID[1],
              DataCatalogName        = pop_raw$DataCatalogName[1],
+             DataCatalogID          = pop_raw$DataCatalogID[1],
              DataProcess            = pop_raw$DataProcess[1],
              ReferencePeriod        = pop_raw$ReferencePeriod[1],
              TimeStart              = pop_raw$TimeStart[1],
@@ -268,7 +272,7 @@ DDharmonize_validate_PopCounts <- function(locid,
     mutate(non_standard = FALSE,
            DataTypeName = "Direct - harmonized and validated through ddharmony",
            DataSourceYear = 2021) %>% 
-    select(id, LocID, LocName, ReferencePeriod, TimeStart, TimeMid, DataProcess, DataCatalogName, 
+    select(id, LocID, LocName, ReferencePeriod, TimeStart, TimeMid, DataProcess, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
            DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue, note) 
@@ -279,7 +283,7 @@ DDharmonize_validate_PopCounts <- function(locid,
   
   skipped <- dd_extract %>% 
     filter(!(ReferencePeriod %in% out_all$ReferencePeriod)) %>% 
-    select(id, LocID, LocName, ReferencePeriod, TimeStart, TimeMid, DataProcess, DataCatalogName, 
+    select(id, LocID, LocName, ReferencePeriod, TimeStart, TimeMid, DataProcess, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
            DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
