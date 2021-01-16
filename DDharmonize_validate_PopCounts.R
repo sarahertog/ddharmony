@@ -243,7 +243,7 @@ DDharmonize_validate_PopCounts <- function(locid,
   for (i in 1:length(ids)) {
 
   dd_one_id <- pop_std_full %>% 
-    filter(id == ids[i])
+    filter(id == ids[i] & SexID %in% c(1,2,3))
   
   # reconcile reported and computed totals over age
   # see note on "Total" record that indicates if difference was greater than 2.5% and thus irreconcilable
