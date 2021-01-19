@@ -14,7 +14,7 @@ dd_firstages_compute <- function(data){
   dv01 <- df$DataValue[df$AgeLabel == "0"]
   dv14 <- df$DataValue[df$AgeLabel == "1-4"]
   dv04 <- df$DataValue[df$AgeLabel == "0-4"]
-  
+
   if(!is.na(dv14) & !is.na(dv01) & is.na(dv04)) {
     df$DataValue[df$AgeLabel == "0-4"] <- dv01 + dv14
   }
