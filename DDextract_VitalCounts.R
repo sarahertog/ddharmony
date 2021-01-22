@@ -3,7 +3,10 @@
 # and create unique id according to Census year, Data Source, Statistical Concept, Data Type
 # other fields needed?
 
-DDextract_VitalCounts <- function(locid, type = c("births","deaths"), start_year, end_year) {
+DDextract_VitalCounts <- function(locid, 
+                                  type = c("births","deaths"), 
+                                  process = c("census","vr"),
+                                  start_year, end_year) {
   
   if (type == "births") {
     indicator_ids <- c(159,170) # total births and births by age of mother
@@ -11,10 +14,12 @@ DDextract_VitalCounts <- function(locid, type = c("births","deaths"), start_year
     indicator_ids <- c(194, 195, 188) 
   }
   
+  dpi <- ifelse(process == "census", 2, 36)
+  
   # Abridged or five year age groups
   tryCatch({
     vital_counts <- get_recorddata(locIds = locid,
-                                   dataProcessIds = c(2,36), # Census and register
+                                   dataProcessIds = dpi, # Census or register
                                    indicatorIds = indicator_ids,
                                    startYear = start_year,
                                    endYear = end_year,
