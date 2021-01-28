@@ -13,7 +13,7 @@ dd_validate_totals_over_sex <- function(data){
   # abridged
   df_abr <- data %>% 
     filter(abridged == TRUE) %>% 
-    select(-DataSourceYear, -series, -note)
+    select(-series, -note)
   
   if (nrow(df_abr) > 0) {
   sexes <- unique(df_abr$SexID)
@@ -49,7 +49,7 @@ dd_validate_totals_over_sex <- function(data){
   # complete
   df_cpl <- data %>% 
     filter(complete == TRUE) %>% 
-    select(-DataSourceYear, -series, -note)
+    select(-series, -note)
   
   if (nrow(df_cpl) > 0) {
     

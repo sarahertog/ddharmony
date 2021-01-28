@@ -19,7 +19,7 @@ dd_rank_id <- function(indata){
     out1 <-  out %>% 
       filter(num.id>=2) %>% 
       group_by(id) %>% 
-      mutate(num.serie = length(unique(abridged)),
+      mutate(num.serie = length(unique(abridged[AgeLabel != "0-4"])),
              maxage = max(AgeStart)) %>% 
       ungroup %>% 
       
@@ -42,8 +42,18 @@ dd_rank_id <- function(indata){
       mutate(has_dyb = ifelse('Demographic Yearbook' %in% DataSourceName, TRUE, FALSE),
              keep_dyb = ifelse(has_dyb == TRUE, 'Demographic Yearbook', DataSourceName)) %>% 
       filter(DataSourceName == keep_dyb) %>% 
-      ungroup() %>% 
-      select(-num.serie, -maxage, -has_de_facto, -keep_de_facto, -has_dyb, -keep_dyb) 
+      
+      # Sixth: If IPUMS is a duplicate source then drop it since many of these series are samples
+      mutate(nonipums_flag = DataSourceShortName != "IPUMS",
+             has_nonipums = any(nonipums_flag),
+             keep_nonipums = ifelse(has_nonipums == FALSE | (has_nonipums == TRUE & DataSourceShortName != "IPUMS"), TRUE, FALSE)) %>% 
+      filter(keep_nonipums == TRUE) %>% 
+        
+      # Seventh, keep most recent data source year
+      filter(DataSourceYear == max(DataSourceYear)) %>% 
+      ungroup() %>%
+      
+      select(-num.serie, -maxage, -has_de_facto, -keep_de_facto, -has_dyb, -keep_dyb, -nonipums_flag, -has_nonipums, -keep_nonipums) 
     
   }  else { out1 <- NULL }
   
