@@ -1,11 +1,11 @@
 ## THIS SCRIPT IMPLEMENTS A WORKFLOW FOR CENSUS POPULATION COUNTS
 ## EXTRACTING FROM DEMODATA, HARMONIZING AGE GROUPS, IDENTIFYING FULL SERIES,
-## SELECTING PREFERRED SERIES, VALIDATING TOTALS AND BY SEX AND, EVENTUALLY,
-## IMPLEMENTING THE WPP METHODS PROTOCOL WRT DETECTING AGE HEAPING AND SMOOTHING
-## THE SERIES, WHERE APPLICABLE
+## SELECTING PREFERRED SERIES, VALIDATING TOTALS AND BY SEX 
 ## modified 12 Jan 2021 to retain keys for bulk upload to DemoData
 ## use retainKeys = TRUE to include these key fields in the function output
 ## modified 14 Jan 2021 to allow user to specify api server address in server parameter
+## modified 29 Jan 2021 to retain more key fields for DemoData loader and to 
+## eliminate dup country-census records in output
 ## Valencia: "https://popdiv.dfs.un.org/DemoData/api/" is default
 ## Paperspace: "http://74.82.31.177/DemoData/api/"
 
@@ -35,7 +35,7 @@ DDharmonize_validate_PopCounts <- function(locid,
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
     filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
-    mutate(id = paste(ReferencePeriod, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
+    mutate(id = paste(LocID, LocName, DataProcess, ReferencePeriod, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
 
   # list of series uniquely identified by Census year - Data Source - Statistical Concept - Data Type
@@ -129,11 +129,16 @@ DDharmonize_validate_PopCounts <- function(locid,
              id_series = paste(id, series, sep = " - "),
              LocName                = pop_raw$LocName[1],
              LocID                  = pop_raw$LocID[1],
+             LocTypeName            = pop_raw$LocTypeName[1],
+             LocAreaTypeName        = pop_raw$LocAreaTypeName[1],
+             SubGroupName           = pop_raw$SubGroupName[1],
+             SubGroupTypeName       = pop_raw$SubGroupTypeName[1],
              DataCatalogName        = pop_raw$DataCatalogName[1],
-             DataCatalogID          = pop_raw$DataCatalogID[1],
              DataProcess            = pop_raw$DataProcess[1],
              ReferencePeriod        = pop_raw$ReferencePeriod[1],
+             TimeUnit               = pop_raw$TimeUnit[1],
              TimeStart              = pop_raw$TimeStart[1],
+             TimeEnd                = pop_raw$TimeEnd[1],
              TimeMid                = pop_raw$TimeMid[1],
              DataSourceName         = pop_raw$DataSourceName[1],
              DataSourceAuthor       = pop_raw$DataSourceAuthor[1],
@@ -144,7 +149,10 @@ DDharmonize_validate_PopCounts <- function(locid,
              DataTypeName           = pop_raw$DataTypeName[1],
              DataSeriesID           = pop_raw$SeriesID[1],
              DataReliabilityName    = pop_raw$DataReliabilityName[1],
-             DataReliabilitySort    = pop_raw$DataReliabilitySort[1])
+             DataReliabilitySort    = pop_raw$DataReliabilitySort[1],
+             ModelPatternName       = pop_raw$ModelPatternName[1],
+             PeriodTypeName         = pop_raw$PeriodTypeName[1],
+             PeriodGroupName        = pop_raw$PeriodGroupName[1],)
 
     pop_std_all[[i]] <- pop_all
     
@@ -268,25 +276,28 @@ DDharmonize_validate_PopCounts <- function(locid,
   
   pop_valid_id <- pop_std_valid %>% dd_rank_id 
   
+  # arrange the data, with priority colums on the left and data loader keys on the right
+  first_columns <- c("id", "LocID", "LocName", "DataProcess", "ReferencePeriod", "TimeStart", "TimeMid", "SexID",
+                     "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
+                     "complete", "non_standard")
+  keep_columns <- names(pop_std_all)
+  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", first_columns))]
+  
+  
   out_all <- pop_valid_id %>% 
     mutate(non_standard = FALSE,
-           DataTypeName = "Direct - harmonized and validated through ddharmony",
+           DataTypeName = "Direct – Age standardized",
            DataSourceYear = 2021) %>% 
-    select(id, LocID, LocName, ReferencePeriod, TimeStart, TimeMid, DataProcess, DataCatalogName, DataCatalogID,
-           DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
-           AgeLabel, AgeSpan, AgeSort, DataValue, note) 
+    select(all_of(first_columns), all_of(keep_columns)) 
         
   
   # 11. Look for censuses years that are in raw data, but not in output
   #     If there are series with non-standard age groups, then add these to output as well
   
+  first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
   skipped <- dd_extract %>% 
     filter(!(ReferencePeriod %in% out_all$ReferencePeriod)) %>% 
-    select(id, LocID, LocName, ReferencePeriod, TimeStart, TimeMid, DataProcess, DataCatalogName, DataCatalogID,
-           DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
-           AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
+    select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
            complete = FALSE,
@@ -296,8 +307,17 @@ DDharmonize_validate_PopCounts <- function(locid,
     distinct()
   
   out_all <- rbind(out_all, skipped) %>% 
-    arrange(id, SexID, abridged, AgeSort)
-  
+    arrange(id, SexID, abridged, AgeSort) %>% 
+    mutate(IndicatorName = NA,
+           IndicatorName = replace(IndicatorName, abridged == TRUE, "Population5"),
+           IndicatorName = replace(IndicatorName, complete == TRUE, "Population1"),
+           AgeUnit = "Year",
+           SexName = NA,
+           SexName = replace(SexName, SexID == 0, "Unknown"),
+           SexName = replace(SexName, SexID == 1, "Male"),
+           SexName = replace(SexName, SexID == 2, "Female"),
+           SexName = replace(SexName, SexID == 3, "Both sexes"))
+
   if (retainKeys == FALSE) {
     out_all <- out_all %>% 
       select(id, LocID, LocName, ReferencePeriod, TimeMid, DataSourceName, StatisticalConceptName,

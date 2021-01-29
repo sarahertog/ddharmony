@@ -53,6 +53,9 @@ dd_rank_id <- function(indata){
       filter(DataSourceYear == max(DataSourceYear)) %>% 
       ungroup() %>%
       
+      # Finally discard a couple of duplicate series (if in sample) that have been hardcoded here bc they are not eliminated by above criteria
+      filter(!(id %in% discard_these_dups)) %>% 
+      
       select(-num.serie, -maxage, -has_de_facto, -keep_de_facto, -has_dyb, -keep_dyb, -nonipums_flag, -has_nonipums, -keep_nonipums) 
     
   }  else { out1 <- NULL }
