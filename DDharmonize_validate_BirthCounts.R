@@ -39,7 +39,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
     filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
-    mutate(id = paste(TimeLabel, DataProcessType, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
+    mutate(id = paste(LocID, LocName, DataProcess, "Births", TimeLabel, DataProcessType, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
  
  # for births by age of mother, use only both sexes combined

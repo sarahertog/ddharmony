@@ -15,7 +15,7 @@ dd_rank_id_vitals <- function(indata){
     out1 <-  out %>% 
       filter(num.id>=2) %>% 
       group_by(id) %>% 
-      mutate(num.serie = length(unique(abridged)),
+      mutate(num.serie = length(unique(abridged[AgeLabel != "0-4"])),
              maxage = max(AgeStart)) %>% 
       ungroup %>% 
       
@@ -48,7 +48,14 @@ dd_rank_id_vitals <- function(indata){
       mutate(has_dyb = ifelse('Demographic Yearbook' %in% DataSourceName, TRUE, FALSE),
              keep_dyb = ifelse(has_dyb == TRUE, 'Demographic Yearbook', DataSourceName)) %>% 
       filter(DataSourceName == keep_dyb) %>% 
-      ungroup() %>% 
+      
+      # Sixth, keep most recent data source year
+      filter(DataSourceYear == max(DataSourceYear)) %>% 
+      ungroup() %>%
+      
+      # Finally discard a couple of duplicate series (if in sample) that have been hardcoded here bc they are not eliminated by above criteria
+      filter(!(id %in% discard_these_dups)) %>% 
+
       select(-num.serie, -maxage, -has_occur, -keep_occur, -has_dyb, -keep_dyb, -has_de_facto, -keep_de_facto) 
     
   }  else { out1 <- NULL }
