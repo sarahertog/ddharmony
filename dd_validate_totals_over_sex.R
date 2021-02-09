@@ -33,11 +33,13 @@ dd_validate_totals_over_sex <- function(data){
       gather(key = "SexID", value = "DataValue", c("X1","X2","X3")) %>% 
       mutate(SexID = as.numeric(substr(SexID,2,2)),
              note = NA) %>% 
+      filter(!is.na(DataValue)) %>% # need this bc NAs are introduced if both sexes has more age groups than by sex
       arrange(SexID, AgeSort)
     } else {
       df_abr <- df_abr %>% 
         mutate(note = "Inconsistent age groups for males and females; Both sexes not reconciled")
     }
+    
     rm(full_m, full_f, ages_same)
   }
   if (!("note" %in% names(df_abr))) {
@@ -70,6 +72,7 @@ dd_validate_totals_over_sex <- function(data){
         gather(key = "SexID", value = "DataValue", c("X1","X2","X3")) %>% 
         mutate(SexID = as.numeric(substr(SexID,2,2)), 
                note = NA) %>% 
+        filter(!is.na(DataValue)) %>% # need this bc NAs are introduced if both sexes has more age groups than by sex
         arrange(SexID, AgeSort)
     } else {
       df_cpl <- df_cpl %>% 
