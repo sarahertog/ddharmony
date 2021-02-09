@@ -286,8 +286,7 @@ DDharmonize_validate_PopCounts <- function(locid,
   
   out_all <- pop_valid_id %>% 
     mutate(non_standard = FALSE,
-           DataTypeName = "Direct – Age standardized",
-           DataSourceYear = 2021) %>% 
+           DataTypeName = "Direct – Age standardized") %>% 
     select(all_of(first_columns), all_of(keep_columns)) 
         
   

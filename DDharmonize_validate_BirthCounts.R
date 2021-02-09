@@ -336,8 +336,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
   
   out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
-           DataTypeName = "Direct - harmonized and validated through ddharmony",
-           DataSourceYear = 2021, 
+           DataTypeName = "Direct - harmonized and validated through ddharmony", 
            note = NA) %>% 
     select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,

@@ -291,8 +291,7 @@ if (nrow(vitals_std_all) > 0) {
   
   out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
-           DataTypeName = "Direct – Age standardized",
-           DataSourceYear = 2021) %>% 
+           DataTypeName = "Direct – Age standardized") %>% 
     select(all_of(first_columns), all_of(keep_columns)) 
         
 } else { out_all <- NULL }
