@@ -2,6 +2,7 @@
 ## Author: Shelmith Kariuki
 ## Description: Calculation of 1-year and 5-year age specific birth rates
 
+options(scipen = 999)
 ## 0. Load the packages required -------------------------------
 
 ###  create a vector of packages to be installed
@@ -111,17 +112,20 @@ merged_df <- merged_df %>%
   mutate(max_age2 = max_age) %>% 
   mutate(across(c(max_age2, ll, ul), ~as.numeric(trimws(gsub("\\+", "", .))))) %>% 
   mutate(juncture = ifelse(ul >= max_age2, 1, 0)) %>% 
-  mutate(AgeLabel = ifelse(juncture == 1 & AgeLabel!= "Total", max_age, AgeLabel )) %>% 
+  mutate(AgeLabel = ifelse(is.na(juncture), AgeLabel,
+           ifelse(juncture == 1 & AgeLabel!= "Total"  , max_age, 
+                  AgeLabel ))) %>% 
   group_by(id) %>% 
-  mutate(pop.count = ifelse(juncture == 1, sum(pop.count[juncture == 1], na.rm = TRUE),
-                            pop.count)) %>% 
+  mutate(pop.count = ifelse(is.na(juncture), pop.count,
+           ifelse(juncture == 1, sum(pop.count[juncture == 1], na.rm = TRUE),
+                            pop.count))) %>% 
   ungroup()
 
 ## Drop the ages that have been collapsed into a smaller bracket
 merged_df <- merged_df %>% 
   mutate(todrop = ifelse(AgeLabel == max_age & is.na(births.count) & !is.na(pop.count),
                          "drop", "keep")) %>% 
-  filter(todrop == "keep") %>% 
+  filter(todrop == "keep"|is.na(todrop)) %>% 
   group_by(id) %>% 
   mutate(pop.count = ifelse(is.na(pop.count), sum(pop.count, na.rm = TRUE), pop.count)) %>% 
   select(-ll, -ul, -max_age, -juncture, -todrop, -max_age2) %>% 
@@ -133,6 +137,12 @@ merged_df <- merged_df %>%
   mutate(asbr = births.count / pop.count)
 
 ## 8. Reshape the data so that we have category on one variable (pop.count, births.count, asbr).-------------------------------
-
+merged_df2 <- merged_df %>% 
+  gather("category", "value", pop.count, births.count, asbr) %>% 
+  select(-Index, -AgeStart, -AgeEnd, -AgeSpan, -AgeSort, -abridged, -complete, -non_standard) %>% 
+  mutate_all(~na.locf0(., fromLast = TRUE)) %>% 
+  group_by(id) %>% 
+  spread(AgeLabel, value) %>% 
+  ungroup()
 
 ## 9. Extract each of the datasets i.e pop_df, births_df, asbr_df.-------------------------------
