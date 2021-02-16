@@ -204,6 +204,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
              ReferencePeriod        = vitals_raw$ReferencePeriod[1],
              TimeStart              = vitals_raw$TimeStart[1],
              TimeMid                = vitals_raw$TimeMid[1],
+             TimeEnd                = vitals_raw$TimeEnd[1],
              TimeLabel              = vitals_raw$TimeLabel[1],
              DataSourceName         = vitals_raw$DataSourceName[1],
              DataSourceAuthor       = vitals_raw$DataSourceAuthor[1],
@@ -336,9 +337,9 @@ DDharmonize_validate_BirthCounts <- function(locid,
   
   out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
-           DataTypeName = "Direct - harmonized and validated through ddharmony", 
+           DataTypeName = "Direct (age standardized)", 
            note = NA) %>% 
-    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
+    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
            DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue, note) 
@@ -350,7 +351,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
   
   skipped <- dd_extract %>% 
     filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
-    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
+    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
            DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
@@ -367,7 +368,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
   
   if (retainKeys == FALSE) {
     out_all <- out_all %>% 
-      select(id, LocID, LocName, TimeLabel, TimeMid, DataProcessType, DataSourceName, StatisticalConceptName,
+      select(id, LocID, LocName, TimeLabel, TimeMid, TimeEnd, DataProcessType, DataSourceName, StatisticalConceptName,
              DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
              AgeLabel, AgeSpan, AgeSort, DataValue, note)
   }

@@ -146,6 +146,7 @@ DDharmonize_validate_DeathCounts <- function(locid,
                  DataProcessType        = vitals_raw$DataProcessType[1],
                  TimeStart              = vitals_raw$TimeStart[1],
                  TimeMid                = vitals_raw$TimeMid[1],
+                 TimeEnd                = vitals_raw$TimeEnd[1],
                  TimeLabel              = vitals_raw$TimeLabel[1],
                  DataSourceName         = vitals_raw$DataSourceName[1],
                  DataSourceAuthor       = vitals_raw$DataSourceAuthor[1],
@@ -282,7 +283,7 @@ if (nrow(vitals_std_all) > 0) {
   vitals_valid_id <- vitals_std_valid %>% dd_rank_id_vitals 
   
   # arrange the data, with priority colums on the left and data loader keys on the right
-  first_columns <- c("id", "LocID", "LocName", "DataProcess", "TimeStart", "TimeMid", "SexID",
+  first_columns <- c("id", "LocID", "LocName", "DataProcess", "TimeStart", "TimeMid", "TimeEnd", "SexID",
                      "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
                      "complete", "non_standard")
   keep_columns <- names(vitals_std_all)
@@ -291,7 +292,7 @@ if (nrow(vitals_std_all) > 0) {
   
   out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
-           DataTypeName = "Direct – Age standardized") %>% 
+           DataTypeName = "Direct (age standardized)") %>% 
     select(all_of(first_columns), all_of(keep_columns)) 
         
 } else { out_all <- NULL }
@@ -299,12 +300,12 @@ if (nrow(vitals_std_all) > 0) {
   # 11. Look for years that are in raw data, but not in output
   #     If there are series with non-standard age groups, then add these to output as well
   
-  first_columns <- c("id", "LocID", "LocName", "DataProcess", "TimeStart", "TimeMid", "SexID",
+  first_columns <- c("id", "LocID", "LocName", "DataProcess", "TimeStart", "TimeMid", "TimeEnd","SexID",
                        "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue")
     
   skipped <- dd_extract %>% 
     filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
-    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
+    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
            DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
            AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
@@ -331,7 +332,7 @@ if (nrow(vitals_std_all) > 0) {
 
   if (retainKeys == FALSE) {
     out_all <- out_all %>% 
-      select(id, LocID, LocName, TimeMid, DataSourceName, StatisticalConceptName,
+      select(id, LocID, LocName, TimeMid, TimeEnd, DataSourceName, StatisticalConceptName,
              DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
              AgeLabel, AgeSpan, AgeSort, DataValue, note)
   }
