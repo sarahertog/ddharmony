@@ -35,8 +35,6 @@ DDharmonize_validate_DeathCounts <- function(locid,
                                       end_year = times[length(times)])
   
   dd_extract <- dd_extract %>% 
-    # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
-    # or “Direct (standard abridged age groups computed - Unknown redistributed)”
     filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
     mutate(id = paste(LocID, LocName, DataProcess, "Deaths", TimeLabel, DataProcessType, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
