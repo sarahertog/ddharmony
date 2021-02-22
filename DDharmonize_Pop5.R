@@ -80,6 +80,16 @@ DDharmonize_Pop5 <- function (indata) {
         select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, DataValue) %>% 
         distinct()
       
+      # if there are still duplicate age groups (e.g., Eswatini 2017 DYB)
+      # keep the last one in current sort order
+      abr <- abr %>% 
+        mutate(sorting = 1:nrow(abr)) %>% 
+        group_by(AgeLabel) %>% 
+        mutate(keeping = max(sorting)) %>% 
+        ungroup() %>% 
+        filter(sorting == keeping) %>% 
+        select(-sorting, -keeping)
+
        # if no record for unknown age, set data value to zero
         if (!("Unknown" %in% abr$AgeLabel)) {
           abr <- abr %>% 
