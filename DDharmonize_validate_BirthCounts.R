@@ -167,10 +167,12 @@ DDharmonize_validate_BirthCounts <- function(locid,
     }
     
     # 6. For births, populate missing abridged age groups with zeros, as appropriate
+    if (!is.null(vitals5_std)) {
       vitals5_std <- dd_fillzeros_births(vitals5_std %>% select(-AgeSort), abridged = TRUE) %>% 
         mutate(abridged = TRUE,
                complete = FALSE,
                series = "abridged")
+    }
 
       if (!is.null(vitals_cpl)) {
       if (nrow(vitals_cpl[vitals_cpl$AgeSpan == 1,]) >=5 ) {
