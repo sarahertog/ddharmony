@@ -33,6 +33,8 @@ DDharmonize_validate_BirthCounts <- function(locid,
                                      process = process,
                                      start_year = times[1],
                                      end_year = times[length(times)])
+ 
+ if (!is.null(dd_extract)) {
    
  dd_extract <- dd_extract %>% 
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
@@ -374,6 +376,11 @@ DDharmonize_validate_BirthCounts <- function(locid,
              DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
              AgeLabel, AgeSpan, AgeSort, DataValue, note)
   }
+  
+ } else { # if no birth counts were extracted from DemoData
+   print(paste0("There are no birth counts by age available for LocID = ",locid," and dataprocess = ", process," for the time period ", times[1], " to ", times[length(times)]))
+   out_all <- NULL
+ }
   
   return(out_all)
   

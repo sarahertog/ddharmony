@@ -30,7 +30,11 @@ DDharmonize_validate_PopCounts <- function(locid,
 # Extract all census population counts for a given country over the period specified in times
   dd_extract <- DDextract_CensusPopCounts(locid      = locid,
                                           start_year = times[1],
-                                          end_year   = times[length(times)]) %>% 
+                                          end_year   = times[length(times)]) 
+  
+  if (!is.null(dd_extract)) {
+    
+    dd_extract <- dd_extract %>% 
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
     dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
@@ -322,6 +326,12 @@ DDharmonize_validate_PopCounts <- function(locid,
       select(id, LocID, LocName, ReferencePeriod, TimeMid, DataSourceName, StatisticalConceptName,
              DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
              AgeLabel, AgeSpan, AgeSort, DataValue, note)
+  }
+  
+
+  } else { # if no census pop counts were extracted from DemoData
+    print(paste0("There are no census age distributions available for LocID = ",locid," for the time period ", times[1], " to ", times[length(times)]))
+    out_all <- NULL
   }
   
   return(out_all)

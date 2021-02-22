@@ -34,6 +34,8 @@ DDharmonize_validate_DeathCounts <- function(locid,
                                       start_year = times[1],
                                       end_year = times[length(times)])
   
+  if (!is.null(dd_extract)) {
+    
   dd_extract <- dd_extract %>% 
     dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
@@ -333,6 +335,11 @@ if (nrow(vitals_std_all) > 0) {
       select(id, LocID, LocName, TimeMid, TimeEnd, DataSourceName, StatisticalConceptName,
              DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
              AgeLabel, AgeSpan, AgeSort, DataValue, note)
+  }
+  
+  } else { # if no death counts were extracted from DemoData
+    print(paste0("There are no death counts by age available for LocID = ",locid," and dataprocess = ", process," for the time period ", times[1], " to ", times[length(times)]))
+    out_all <- NULL
   }
   
   return(out_all)
