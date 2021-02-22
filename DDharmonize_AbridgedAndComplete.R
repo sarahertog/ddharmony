@@ -43,7 +43,7 @@
 # id_list <- unique(pop_counts$id)
 # id_list
 # df_one_series <- pop_counts %>% 
-#   filter(id == id_list[13]) %>% 
+#   dplyr::filter(id == id_list[13]) %>% 
 #   select(IndicatorShortName, DataSourceYear, DataStatusName, SexID, 
 #          AgeStart, AgeEnd, AgeLabel, AgeSpan, DataValue, SeriesID, DataSourceID, id)
 # 
@@ -51,13 +51,13 @@
 # pop1 <- DDharmonize_Pop1(indata = df_one_series)
 # 
 # if (!is.null(pop5)) {
-# data_abr <- pop5 %>% filter(series == "abridged")
-# data_cpl_from_abr <- pop5 %>% filter(series == "complete from abridged") } else {
+# data_abr <- pop5 %>% dplyr::filter(series == "abridged")
+# data_cpl_from_abr <- pop5 %>% dplyr::filter(series == "complete from abridged") } else {
 #   data_abr <- NULL
 #   data_cpl_from_abr <- NULL
 # }
 # if (!is.null(pop1)) {
-# data_cpl <- pop1 %>% filter(series == "complete")  } else {
+# data_cpl <- pop1 %>% dplyr::filter(series == "complete")  } else {
 #   data_cpl <- NA
 # }
 # 
@@ -87,19 +87,19 @@ DDharmonize_AbridgedAndComplete <- function (data_abr,
   
   if (has_abr) {  
     
-    df_abr <- data_abr %>% filter(SexID == sex) %>% 
+    df_abr <- data_abr %>% dplyr::filter(SexID == sex) %>% 
       select(-note, -SexID)
     total_abr <- df_abr$DataValue[df_abr$AgeLabel == "Total"]
     
   } else { df_abr <- NULL }
   
   if (has_cpl_from_abr) {  
-    df_cpl_from_abr <- data_cpl_from_abr %>% filter(SexID == sex) %>% 
+    df_cpl_from_abr <- data_cpl_from_abr %>% dplyr::filter(SexID == sex) %>% 
       select(-note, -SexID)
   } else { df_cpl_from_abr <- NULL }
   
   if (has_cpl) {  
-    df_cpl <- data_cpl %>% filter(SexID == sex ) %>% 
+    df_cpl <- data_cpl %>% dplyr::filter(SexID == sex ) %>% 
       select(-note, -SexID)
     total_cpl <- df_cpl$DataValue[df_cpl$AgeLabel == "Total"]
     df_abr_from_cpl <- df_cpl %>% dd_single2abridged
@@ -143,28 +143,28 @@ DDharmonize_AbridgedAndComplete <- function (data_abr,
     ###########################
     
     df_abr <- df_abr %>%
-      bind_rows(df_abr_from_cpl %>% filter(!(AgeLabel %in% df_abr$AgeLabel)))
+      bind_rows(df_abr_from_cpl %>% dplyr::filter(!(AgeLabel %in% df_abr$AgeLabel)))
 
     # drop records for open age groups that do not close the series
     oag_start_abr <- dd_oag_agestart(df_abr, multiple5 = TRUE)
     
     if (!is_empty(oag_start_abr)) {
     df_abr <- df_abr %>% 
-      filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_abr))
+      dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_abr))
     }
     
     # compute all possible open age groups
     oag_abr <- dd_oag_compute(df_abr, age_span = 5)
     if(!is.null(oag_abr)) {
     df_abr <- df_abr %>% 
-      bind_rows(oag_abr %>% filter(!(AgeLabel %in% df_abr$AgeLabel)))
+      bind_rows(oag_abr %>% dplyr::filter(!(AgeLabel %in% df_abr$AgeLabel)))
     }
     
     # drop records for open age groups that do not close the series
     oag_start_abr <- dd_oag_agestart(df_abr, multiple5 = TRUE)
     if (!is_empty(oag_start_abr)) {
     df_abr <- df_abr %>% 
-      filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_abr)) %>% 
+      dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_abr)) %>% 
       mutate(series = "abridged reconciled with complete") %>% 
       arrange(AgeSort)
     }
@@ -180,7 +180,7 @@ DDharmonize_AbridgedAndComplete <- function (data_abr,
     
     if (!is.null(df_cpl_from_abr)) {
     df_cpl <- df_cpl %>% 
-      bind_rows(df_cpl_from_abr %>% filter(!(AgeLabel %in% df_cpl$AgeLabel)))
+      bind_rows(df_cpl_from_abr %>% dplyr::filter(!(AgeLabel %in% df_cpl$AgeLabel)))
     }
     
     # only process if there are multiple closed age groups in the series
@@ -190,21 +190,21 @@ DDharmonize_AbridgedAndComplete <- function (data_abr,
     # drop records for open age groups that do not close the series
     oag_start_cpl <- dd_oag_agestart(df_cpl, multiple5 = FALSE)
     df_cpl <- df_cpl %>% 
-      filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_cpl))
+      dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_cpl))
     
     # compute all possible open age groups
       oag_cpl <- dd_oag_compute(df_cpl, age_span = 1)
       if (!is.null(oag_cpl)) {
       df_cpl <- df_cpl %>% 
-        bind_rows(oag_cpl %>% filter(!(AgeLabel %in% df_cpl$AgeLabel)))
+        bind_rows(oag_cpl %>% dplyr::filter(!(AgeLabel %in% df_cpl$AgeLabel)))
       }
     
     # identify the open age group that is a multiple of five
     oag_start_cpl <- dd_oag_agestart(df_cpl, multiple5 = TRUE)
     
     df_cpl <- df_cpl %>% 
-      filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_cpl)) %>% 
-      filter(!(AgeSpan ==1 & AgeStart >= oag_start_cpl)) %>% 
+      dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start_cpl)) %>% 
+      dplyr::filter(!(AgeSpan ==1 & AgeStart >= oag_start_cpl)) %>% 
       mutate(series = "complete reconciled with abridged") %>% 
       arrange(AgeSort)
     

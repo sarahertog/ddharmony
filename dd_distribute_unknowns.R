@@ -12,7 +12,7 @@ dd_distribute_unknowns <- function(data){
   for (sex in unique(data$SexID)) {
     
     df_abr <- data %>% 
-      filter(SexID == sex & abridged == TRUE)
+      dplyr::filter(SexID == sex & abridged == TRUE)
     
     total_value   <- df_abr$DataValue[df_abr$AgeLabel == "Total"]
     unknown_value <- df_abr$DataValue[df_abr$AgeLabel == "Unknown"]
@@ -24,13 +24,13 @@ dd_distribute_unknowns <- function(data){
                add_unk  = unknown_value * pct_dist,
                add_unk  = ifelse(AgeLabel == "Total", 0, add_unk),
                DataValue = DataValue + add_unk) %>% 
-        filter(AgeLabel != "Unknown") %>% 
+        dplyr::filter(AgeLabel != "Unknown") %>% 
         select(-pct_dist, -add_unk)
     }
     rm(total_value, unknown_value)
     
     df_cpl <- data %>% 
-      filter(SexID == sex & complete == TRUE)
+      dplyr::filter(SexID == sex & complete == TRUE)
     
     total_value   <- df_cpl$DataValue[df_cpl$AgeLabel == "Total"]
     unknown_value <- df_cpl$DataValue[df_cpl$AgeLabel == "Unknown"]
@@ -42,7 +42,7 @@ dd_distribute_unknowns <- function(data){
                add_unk  = unknown_value * pct_dist,
                add_unk  = ifelse(AgeLabel == "Total", 0, add_unk),
                DataValue = DataValue + add_unk) %>% 
-        filter(AgeLabel != "Unknown") %>% 
+        dplyr::filter(AgeLabel != "Unknown") %>% 
         select(-pct_dist, -add_unk)
     }
     

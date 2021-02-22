@@ -37,13 +37,13 @@ DDharmonize_validate_BirthCounts <- function(locid,
  dd_extract <- dd_extract %>% 
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
-    filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
+    dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
     mutate(id = paste(LocID, LocName, DataProcess, "Births", TimeLabel, DataProcessType, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
  
  # for births by age of mother, use only both sexes combined
-   dd_extract <- dd_extract %>% filter(SexID ==3)
+   dd_extract <- dd_extract %>% dplyr::filter(SexID ==3)
 
   # list of series uniquely identified 
     ids <- unique(dd_extract$id)
@@ -56,11 +56,11 @@ DDharmonize_validate_BirthCounts <- function(locid,
     # for each series:
     
     vitals_raw <- dd_extract %>% 
-      filter(id == ids[i])
+      dplyr::filter(id == ids[i])
 
     # 1. isolate records that refer to five-year age data
     vitals5_raw <- vitals_raw %>% 
-      filter(AgeSpan %in% c(-2, -1) | AgeSpan >=5)
+      dplyr::filter(AgeSpan %in% c(-2, -1) | AgeSpan >=5)
 
     # 2. hamonize the vital5 data into standard age groups
     if (nrow(vitals5_raw[vitals5_raw$AgeSpan == 5,]) > 0) {
@@ -72,7 +72,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
     
     # 3. isolate records that refer to single year age data
     vitals1_raw <- vitals_raw %>% 
-      filter(AgeSpan %in% c(-2, -1, 1))
+      dplyr::filter(AgeSpan %in% c(-2, -1, 1))
     
     # 4. hamonize the pop1 data into standard age groups
     if (nrow(vitals1_raw[vitals1_raw$AgeSpan == 1,]) > 0) {
@@ -122,11 +122,11 @@ DDharmonize_validate_BirthCounts <- function(locid,
       vitals_abr_cpl <- DDharmonize_AbridgedAndComplete(data_abr = vitals_abr,
                                                         data_cpl_from_abr = NULL,
                                                         data_cpl = vitals_cpl) %>% 
-        filter(series %in% c("abridged reconciled with complete", "complete reconciled with abridged"))
+        dplyr::filter(series %in% c("abridged reconciled with complete", "complete reconciled with abridged"))
     
     # fill in zeros for births at young ages, if missing
       vitals_abr_cpl1 <- vitals_abr_cpl %>% 
-        filter(series == "abridged reconciled with complete") 
+        dplyr::filter(series == "abridged reconciled with complete") 
       if (nrow(vitals_abr_cpl1) > 0) {
       vitals_abr_cpl1 <- dd_fillzeros_births(data = vitals_abr_cpl1 %>% 
                                                select(-AgeSort), abridged = TRUE) %>% 
@@ -135,7 +135,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
                series = "abridged reconciled with complete")
       }
       vitals_abr_cpl2 <- vitals_abr_cpl %>% 
-        filter(series == "complete reconciled with abridged") 
+        dplyr::filter(series == "complete reconciled with abridged") 
       if (nrow(vitals_abr_cpl2) > 0) {
       vitals_abr_cpl2 <- dd_fillzeros_births(data = vitals_abr_cpl2 %>% 
                                                select(-AgeSort), abridged = FALSE) %>% 
@@ -153,7 +153,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
       vitals5_std <- NULL
       vitals_abr_cpl <- NULL
       for (sex in unique(vitals_cpl$SexID)) {
-        vitals_abr_cpl_sex <- dd_single2abridged(data = vitals_cpl %>% filter(SexID == sex)) %>% 
+        vitals_abr_cpl_sex <- dd_single2abridged(data = vitals_cpl %>% dplyr::filter(SexID == sex)) %>% 
         mutate(SexID = sex)
         vitals_abr_cpl <- rbind(vitals_abr_cpl, vitals_abr_cpl_sex) 
       rm(vitals_abr_cpl_sex)
@@ -238,12 +238,12 @@ DDharmonize_validate_BirthCounts <- function(locid,
     
     for (i in 1:length(id_sers)) {
       vitals_one_series <- vitals_std_all %>% 
-        filter(id_series == id_sers[i])
+        dplyr::filter(id_series == id_sers[i])
       
       abridged <- substr(vitals_one_series$series[1],1,1) == "a"
       
       check_full <- dd_series_isfull(vitals_one_series %>% 
-                                         filter(SexID == 3),
+                                         dplyr::filter(SexID == 3),
                                        abridged = abridged)
 
       # if is full, then identify the series to keep
@@ -252,7 +252,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
       }
     }
     vitals_std_full <- vitals_std_all %>% 
-      filter(id_series %in% id_series_full) %>% 
+      dplyr::filter(id_series %in% id_series_full) %>% 
       mutate(id_sex = paste(id, SexID, sep = " - "))
 
   } else { vitals_std_full <- vitals_std_all }
@@ -269,20 +269,20 @@ DDharmonize_validate_BirthCounts <- function(locid,
   for (i in 1:length(ids_sex)) {
     
     abr <- vitals_std_full %>% 
-      filter(id_sex == ids_sex[i] & substr(series,1,1) == "a")
+      dplyr::filter(id_sex == ids_sex[i] & substr(series,1,1) == "a")
     if (nrow(abr) > 0) {
       if ("abridged reconciled with complete" %in% abr$series) {
         abr <- abr %>% 
-          filter(series == "abridged reconciled with complete")
+          dplyr::filter(series == "abridged reconciled with complete")
       }
     }
     
     cpl <- vitals_std_full %>% 
-      filter(id_sex == ids_sex[i] & substr(series,1,1) == "c")
+      dplyr::filter(id_sex == ids_sex[i] & substr(series,1,1) == "c")
     if (nrow(cpl) > 0) {
       if ("complete reconciled with abridged" %in% cpl$series) {
         cpl <- cpl %>% 
-          filter(series == "complete reconciled with abridged") 
+          dplyr::filter(series == "complete reconciled with abridged") 
       }
     }
     
@@ -311,7 +311,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
   for (i in 1:length(ids)) {
 
   dd_one_id <- vitals_std_full %>% 
-    filter(id == ids[i])
+    dplyr::filter(id == ids[i])
   
   # reconcile reported and computed totals over age
   dd_one_id <- dd_validate_totals_over_age(data = dd_one_id)
@@ -350,7 +350,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
   #     If there are series with non-standard age groups, then add these to output as well
   
   skipped <- dd_extract %>% 
-    filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
+    dplyr::filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
     select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
            DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
            DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 

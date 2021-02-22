@@ -19,7 +19,7 @@ DDharmonize_Pop5 <- function (indata) {
       print(paste("SexID = ", sex))
 
       abr <- pop_abridged %>% 
-          filter(SexID == sex & !is.na(DataValue)) %>% 
+          dplyr::filter(SexID == sex & !is.na(DataValue)) %>% 
           select(-SexID) %>% 
           distinct()
     
@@ -28,7 +28,7 @@ DDharmonize_Pop5 <- function (indata) {
       # if "Final" data status is available, keep only the final series
        if ("Final" %in% unique(abr$DataStatusName)) {
          abr <- abr %>% 
-           filter(DataStatusName == "Final") 
+           dplyr::filter(DataStatusName == "Final") 
        }
       
       # check for multiple series ids
@@ -38,17 +38,17 @@ DDharmonize_Pop5 <- function (indata) {
       # for each unique series, 
       abr_out <- NULL
       for (i in 1:n_series) {
-        df <- abr %>% filter(SeriesID == ids_series[i])
+        df <- abr %>% dplyr::filter(SeriesID == ids_series[i])
         
         # populate any missing abridged records based on any data by single year of age
-        sngl <- df %>% filter(AgeSpan == 1)
+        sngl <- df %>% dplyr::filter(AgeSpan == 1)
         
         if (nrow(sngl) > 1) {
           sngl2abr <- sngl %>% dd_single2abridged %>% 
             select(-AgeSort) %>% 
             mutate(DataSourceYear = sngl$DataSourceYear[1])
           df <- df %>% 
-            bind_rows(sngl2abr %>% filter(!(AgeLabel %in% df$AgeLabel)))
+            bind_rows(sngl2abr %>% dplyr::filter(!(AgeLabel %in% df$AgeLabel)))
         }
         
         # check whether it is a full series with all age groups represented and an open age greater than 60
@@ -97,12 +97,12 @@ DDharmonize_Pop5 <- function (indata) {
           bind_rows(abr[abr$AgeSpan < 0,])
         
         cpl_from_abr <- dd_age_standard(cpl_from_abr, abridged = FALSE) %>% 
-          filter(!is.na(DataValue)) %>% 
+          dplyr::filter(!is.na(DataValue)) %>% 
           mutate(note = NA)
         
        # remove single year records for age> 0 from abridged
         abr <- abr %>% 
-          filter(!(AgeSpan == 1 & AgeStart != 0)) %>% 
+          dplyr::filter(!(AgeSpan == 1 & AgeStart != 0)) %>% 
           arrange(AgeStart)
         
       # reconcile first age groups
@@ -114,7 +114,7 @@ DDharmonize_Pop5 <- function (indata) {
        # compute closed age groups from multiple open age groups and add to data if missing
         if (oag_multi) {
           add <- abr %>% dd_oag2closed %>% 
-            filter(!(AgeLabel %in% abr$AgeLabel[!is.na(abr$DataValue)]))
+            dplyr::filter(!(AgeLabel %in% abr$AgeLabel[!is.na(abr$DataValue)]))
           if (nrow(add > 0)) {
             abr <- abr %>% 
               bind_rows(add) %>% 
@@ -129,7 +129,7 @@ DDharmonize_Pop5 <- function (indata) {
 
       # drop records for open age groups that do not close the series
        abr <- abr %>% 
-         filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start))
+         dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start))
 
       # check that there are no missing age groups on the abridged series
        if (nrow(abr[abr$AgeStart >= 5,]) > 0) {
@@ -195,7 +195,7 @@ DDharmonize_Pop5 <- function (indata) {
             select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, DataValue)
           
           cpl_from_abr <- dd_age_standard(cpl_from_abr, abridged = FALSE) %>% 
-            filter(!is.na(DataValue)) %>% 
+            dplyr::filter(!is.na(DataValue)) %>% 
             select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
             mutate(note = NA,
                    note = as.character(note),
@@ -212,7 +212,7 @@ DDharmonize_Pop5 <- function (indata) {
           abr <- abr  %>%  dd_latest_source_year  %>% 
             select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, DataValue)
           abr <- dd_age_standard(abr, abridged = TRUE) %>% 
-            filter(!is.na(DataValue)) %>% 
+            dplyr::filter(!is.na(DataValue)) %>% 
             select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
             mutate(note = "The abridged series is missing data for one or more age groups.",
                    SexID = sex) 
@@ -238,14 +238,14 @@ DDharmonize_Pop5 <- function (indata) {
         mutate(abridged = TRUE,
                complete = FALSE,
                series = "abridged") %>% 
-        filter(AgeSpan %in% c(-2, -1, 1, 4, 5))
+        dplyr::filter(AgeSpan %in% c(-2, -1, 1, 4, 5))
     }
     if (!is.null(cpl_from_abr_sex)) {
       cpl_from_abr_sex <- cpl_from_abr_sex %>% 
         mutate(abridged = FALSE,
                complete = TRUE,
                series = "complete from abridged") %>% 
-        filter(AgeSpan %in% c(-2, -1, 1))
+        dplyr::filter(AgeSpan %in% c(-2, -1, 1))
     }
 
     outdata <- rbind(abr_sex, cpl_from_abr_sex)

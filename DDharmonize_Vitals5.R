@@ -15,7 +15,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
       print(paste("SexID = ", sex))
 
       abr <- indata %>% 
-          filter(SexID == sex & !is.na(DataValue)) %>% 
+          dplyr::filter(SexID == sex & !is.na(DataValue)) %>% 
           select(-SexID) %>% 
           distinct()
     
@@ -24,7 +24,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
       # if "Final" data status is available, keep only the final series
        if ("Final" %in% unique(abr$DataStatusName)) {
          abr <- abr %>% 
-           filter(DataStatusName == "Final") 
+           dplyr::filter(DataStatusName == "Final") 
        }
       
       # check for multiple series ids
@@ -34,7 +34,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
       # for each unique series, 
       abr_out <- NULL
       for (i in 1:n_series) {
-        df <- abr %>% filter(SeriesID == ids_series[i])
+        df <- abr %>% dplyr::filter(SeriesID == ids_series[i])
         
         # check whether it is a full series with all age groups represented and an open age greater than 60
         df_abr_std    <- df[(df$AgeStart == 0 & df$AgeSpan == 1 ) | 
@@ -93,7 +93,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
        # compute closed age groups from multiple open age groups and add to data if missing
         if (oag_multi) {
           add <- abr %>% dd_oag2closed %>% 
-            filter(!(AgeLabel %in% abr$AgeLabel[!is.na(abr$DataValue)]))
+            dplyr::filter(!(AgeLabel %in% abr$AgeLabel[!is.na(abr$DataValue)]))
           if (nrow(add > 0)) {
             abr <- abr %>% 
               bind_rows(add) %>% 
@@ -108,7 +108,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
 
       # drop records for open age groups that do not close the series
        abr <- abr %>% 
-         filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start))
+         dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start))
 
       # check that there are no missing age groups on the abridged series
        if (nrow(abr[abr$AgeStart >= 5,]) > 0) {
@@ -165,7 +165,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
           abr <- abr  %>%  dd_latest_source_year  %>% 
             select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, DataValue)
           abr <- dd_age_standard(abr, abridged = TRUE) %>% 
-            filter(!is.na(DataValue)) %>% 
+            dplyr::filter(!is.na(DataValue)) %>% 
             select(DataSourceYear, AgeStart, AgeEnd, AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
             mutate(note = "The abridged series is missing data for one or more age groups.",
                    SexID = sex) 
@@ -188,7 +188,7 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
         mutate(abridged = TRUE,
                complete = FALSE,
                series = "abridged") %>% 
-        filter(AgeSpan %in% c(-2, -1, 1, 4, 5))
+        dplyr::filter(AgeSpan %in% c(-2, -1, 1, 4, 5))
     }
     
     outdata <- rbind(abr_sex)

@@ -20,18 +20,18 @@ dd_single2abridged  <- function(data){ #input should be a dataset by single year
   std_ages <- std_age_function()
   
   age_std <- std_ages %>% 
-    filter(abridged == TRUE) %>% 
+    dplyr::filter(abridged == TRUE) %>% 
     select(-abridged, -complete)
   
   # a) Closed age groups
   age_std_closed <- age_std %>% 
-    filter(AgeSpan >0)
+    dplyr::filter(AgeSpan >0)
   
   data.out1 <- NULL
   for (i in 1:nrow(age_std_closed)) {
     
     df <- data %>% 
-      filter(AgeSpan==1 & 
+      dplyr::filter(AgeSpan==1 & 
                AgeStart>= age_std_closed$AgeStart[i] & 
                AgeStart < age_std_closed$AgeEnd[i] & 
                !is.na(DataValue)) 
@@ -60,8 +60,8 @@ dd_single2abridged  <- function(data){ #input should be a dataset by single year
   
   data.out <- data %>% 
     bind_rows(data.out1 %>% 
-                filter(AgeLabel !="0")) %>% # remove first age group to avoid dups
-    filter(AgeSort %in% age_std$AgeSort & !is.na(DataValue)) %>% 
+                dplyr::filter(AgeLabel !="0")) %>% # remove first age group to avoid dups
+    dplyr::filter(AgeSort %in% age_std$AgeSort & !is.na(DataValue)) %>% 
     arrange(AgeSort)
   
   return(data.out)

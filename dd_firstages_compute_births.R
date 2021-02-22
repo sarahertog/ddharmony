@@ -51,7 +51,7 @@ dd_firstages_compute_births <- function(data){
   }
   
   data.out <- df %>% 
-    filter(!is.na(DataValue) & !is.na(AgeSort))
+    dplyr::filter(!is.na(DataValue) & !is.na(AgeSort))
   
   return(data.out)
 }

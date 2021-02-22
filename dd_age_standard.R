@@ -24,9 +24,9 @@ dd_age_standard<- function(data, abridged = TRUE){
     
     if (abridged) {
       std_ages <- std_ages %>% 
-        filter(abridged == TRUE)
+        dplyr::filter(abridged == TRUE)
     } else { std_ages <- std_ages %>% 
-      filter(complete==TRUE)
+      dplyr::filter(complete==TRUE)
     }
     std_ages <- std_ages %>% 
       select(-abridged, -complete) 

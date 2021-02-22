@@ -33,7 +33,7 @@ DDharmonize_validate_PopCounts <- function(locid,
                                           end_year   = times[length(times)]) %>% 
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
-    filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
+    dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
     mutate(id = paste(LocID, LocName, DataProcess, ReferencePeriod, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
@@ -49,11 +49,11 @@ DDharmonize_validate_PopCounts <- function(locid,
     # for each series:
     
     pop_raw <- dd_extract %>% 
-      filter(id == ids[i])
+      dplyr::filter(id == ids[i])
 
     # 1. isolate records from the "Population5" indicator
     pop5_raw <- pop_raw %>% 
-      filter(IndicatorShortName == "Population5")
+      dplyr::filter(IndicatorShortName == "Population5")
     
     # 2. hamonize the pop5 data into standard age groups
     if (nrow(pop5_raw) > 0) {
@@ -64,7 +64,7 @@ DDharmonize_validate_PopCounts <- function(locid,
 
     # 3. isolate records from the "Population1" indicator
     pop1_raw <- pop_raw %>% 
-      filter(IndicatorShortName == "Population1")
+      dplyr::filter(IndicatorShortName == "Population1")
     
     # 4. hamonize the pop1 data into standard age groups
     if (nrow(pop1_raw) > 0) {
@@ -75,9 +75,9 @@ DDharmonize_validate_PopCounts <- function(locid,
     # 5. reconcile abridged and complete series, as necessary
     if(!is.null(pop5_std)) {
       pop_abr <- pop5_std %>% 
-        filter(series == "abridged") # standard abridged age groups
+        dplyr::filter(series == "abridged") # standard abridged age groups
       pop_cpl_from_abr <- pop5_std %>% 
-        filter(series == "complete from abridged") # single year and other records that were on Population5 series but may be needed for complete
+        dplyr::filter(series == "complete from abridged") # single year and other records that were on Population5 series but may be needed for complete
       if (nrow(pop_abr) == 0) {
         pop_abr <- NULL
         pop_abr_cpl <- NULL
@@ -98,10 +98,10 @@ DDharmonize_validate_PopCounts <- function(locid,
     pop_abr_cpl <- DDharmonize_AbridgedAndComplete(data_abr = pop_abr,
                                                    data_cpl_from_abr = pop_cpl_from_abr,
                                                    data_cpl = pop_cpl) %>% 
-      filter(series %in% c("abridged reconciled with complete", "complete reconciled with abridged"))
+      dplyr::filter(series %in% c("abridged reconciled with complete", "complete reconciled with abridged"))
     
     pop5_std <- pop5_std %>% 
-      filter(series == "abridged")
+      dplyr::filter(series == "abridged")
     
     }
     
@@ -109,7 +109,7 @@ DDharmonize_validate_PopCounts <- function(locid,
       pop5_std <- NULL
       pop_abr_cpl <- NULL
       for (sex in unique(pop_cpl$SexID)) {
-      pop_abr_cpl_sex <- dd_single2abridged(data = pop_cpl %>% filter(SexID == sex)) %>% 
+      pop_abr_cpl_sex <- dd_single2abridged(data = pop_cpl %>% dplyr::filter(SexID == sex)) %>% 
         mutate(SexID = sex)
       pop_abr_cpl <- rbind(pop_abr_cpl, pop_abr_cpl_sex) 
       rm(pop_abr_cpl_sex)
@@ -167,25 +167,25 @@ DDharmonize_validate_PopCounts <- function(locid,
 ## PART 2: FILTER AVAIALBE SERIES, KEEPING ONLY THOSE THAT CONTAIN A FULL AGE DISTRIBUTION
   # AND THE POST-RECONCILIATION ABRIDGED AND COMPLETE SERIES, WHERE APPLICABLE
   
-  # 7. filter through id_series and keep only those that are full
+  # 7. dplyr::filter through id_series and keep only those that are full
   # (all age groups present)
   id_sers <- unique(pop_std_all$id_series)
   
   id_series_full <- NULL
   for (i in 1:length(id_sers)) {
     pop_one_series <- pop_std_all %>% 
-      filter(id_series == id_sers[i])
+      dplyr::filter(id_series == id_sers[i])
     
     abridged <- substr(pop_one_series$series[1],1,1) == "a"
     
     check_full_m <- dd_series_isfull(pop_one_series %>% 
-                                       filter(SexID == 1),
+                                       dplyr::filter(SexID == 1),
                                      abridged = abridged)
     check_full_f <- dd_series_isfull(pop_one_series %>% 
-                                       filter(SexID == 2),
+                                       dplyr::filter(SexID == 2),
                                      abridged = abridged)
     check_full_b <- dd_series_isfull(pop_one_series %>% 
-                                       filter(SexID == 3),
+                                       dplyr::filter(SexID == 3),
                                      abridged = abridged)
     check_full <- c(check_full_m, check_full_f, check_full_b) 
     
@@ -198,7 +198,7 @@ DDharmonize_validate_PopCounts <- function(locid,
   }
   
   pop_std_full <- pop_std_all %>% 
-    filter(id_series %in% id_series_full) %>% 
+    dplyr::filter(id_series %in% id_series_full) %>% 
     mutate(id_sex = paste(id, SexID, sep = " - "))
   
     
@@ -212,20 +212,20 @@ DDharmonize_validate_PopCounts <- function(locid,
   for (i in 1:length(ids_sex)) {
     
     abr <- pop_std_full %>% 
-      filter(id_sex == ids_sex[i] & substr(series,1,1) == "a")
+      dplyr::filter(id_sex == ids_sex[i] & substr(series,1,1) == "a")
     if (nrow(abr) > 0) {
       if ("abridged reconciled with complete" %in% abr$series) {
         abr <- abr %>% 
-          filter(series == "abridged reconciled with complete")
+          dplyr::filter(series == "abridged reconciled with complete")
       }
     }
     
     cpl <- pop_std_full %>% 
-      filter(id_sex == ids_sex[i] & substr(series,1,1) == "c")
+      dplyr::filter(id_sex == ids_sex[i] & substr(series,1,1) == "c")
     if (nrow(cpl) > 0) {
       if ("complete reconciled with abridged" %in% cpl$series) {
         cpl <- cpl %>% 
-          filter(series == "complete reconciled with abridged") 
+          dplyr::filter(series == "complete reconciled with abridged") 
       }
     }
     
@@ -251,7 +251,7 @@ DDharmonize_validate_PopCounts <- function(locid,
   for (i in 1:length(ids)) {
 
   dd_one_id <- pop_std_full %>% 
-    filter(id == ids[i] & SexID %in% c(1,2,3))
+    dplyr::filter(id == ids[i] & SexID %in% c(1,2,3))
   
   # reconcile reported and computed totals over age
   # see note on "Total" record that indicates if difference was greater than 2.5% and thus irreconcilable
@@ -295,7 +295,7 @@ DDharmonize_validate_PopCounts <- function(locid,
   
   first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
   skipped <- dd_extract %>% 
-    filter(!(ReferencePeriod %in% out_all$ReferencePeriod)) %>% 
+    dplyr::filter(!(ReferencePeriod %in% out_all$ReferencePeriod)) %>% 
     select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,

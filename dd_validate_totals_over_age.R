@@ -12,7 +12,7 @@ dd_validate_totals_over_age <- function(data){
   for (sex in unique(data$SexID)) {
     
     df_abr <- data %>% 
-      filter(SexID == sex & abridged == TRUE)
+      dplyr::filter(SexID == sex & abridged == TRUE)
     
     total_reported_abr <- df_abr$DataValue[df_abr$AgeLabel == "Total"]
     total_computed_abr <- sum(df_abr$DataValue[df_abr$AgeSpan %in% c(-1,-2, 5) & df_abr$AgeLabel != "Total"])
@@ -33,7 +33,7 @@ dd_validate_totals_over_age <- function(data){
     }
     
     df_cpl <- data %>% 
-      filter(SexID == sex & complete == TRUE)
+      dplyr::filter(SexID == sex & complete == TRUE)
     
     total_reported_cpl <- df_cpl$DataValue[df_cpl$AgeLabel == "Total"]
     total_computed_cpl <- sum(df_cpl$DataValue[df_cpl$AgeLabel != "Total"])

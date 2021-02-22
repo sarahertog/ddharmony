@@ -19,7 +19,7 @@ DDharmonize_Pop1 <- function (indata) {
       print(paste("SexID = ", sex))
 
       df <- pop %>% 
-          filter(SexID == sex & !is.na(DataValue)) %>% 
+          dplyr::filter(SexID == sex & !is.na(DataValue)) %>% 
           mutate(AgeLabel = as.character(AgeLabel)) %>% 
           distinct()
     
@@ -28,7 +28,7 @@ DDharmonize_Pop1 <- function (indata) {
        # if "Final" data status is available, keep only the final series
        if ("Final" %in% unique(df$DataStatusName)) {
          df <- df %>% 
-           filter(DataStatusName == "Final")
+           dplyr::filter(DataStatusName == "Final")
        }
         
         # check for multiple series ids
@@ -38,7 +38,7 @@ DDharmonize_Pop1 <- function (indata) {
         # for each unique series, 
         df_out <- NULL
         for (i in 1:n_series) {
-          df_one <- df %>% filter(SeriesID == ids_series[i])
+          df_one <- df %>% dplyr::filter(SeriesID == ids_series[i])
           
           # check whether it is a full series with all age groups represented
           df_one_std    <- df_one[df_one$AgeSpan %in% c(-1, -2, 1),]
@@ -88,7 +88,7 @@ DDharmonize_Pop1 <- function (indata) {
           if(total_reported < total_computed) {
             
           df <- df %>% 
-            filter(AgeLabel != "Total")
+            dplyr::filter(AgeLabel != "Total")
           
           }
         }
@@ -104,16 +104,16 @@ DDharmonize_Pop1 <- function (indata) {
         
         # drop records for open age groups that do not close the series
         df <- df %>% 
-          filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start)) %>% 
+          dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start)) %>% 
           arrange(AgeStart, AgeSpan)
         
         # add AgeSort field that identify standard age groups
         df <- dd_age_standard(df, abridged = FALSE) %>% 
-          filter(!is.na(DataValue))
+          dplyr::filter(!is.na(DataValue))
         
         # check that df is in fact a complete series starting at age zero and without gaps
         check_cpl <- df %>% 
-          filter(AgeSpan ==1) %>% 
+          dplyr::filter(AgeSpan ==1) %>% 
           summarise(minAge = min(AgeStart),
                     maxAge = max(AgeStart),
                     nAge   = length(unique(AgeStart)))
@@ -134,7 +134,7 @@ DDharmonize_Pop1 <- function (indata) {
       
       if (!("AgeSort" %in% names(df))) {
         df <- dd_age_standard(df, abridged = FALSE) %>% 
-          filter(!is.na(DataValue))
+          dplyr::filter(!is.na(DataValue))
         check_cpl <- FALSE
       }
         

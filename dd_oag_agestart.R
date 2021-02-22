@@ -10,8 +10,8 @@ dd_oag_agestart <- function(data, multiple5 = TRUE){
   require(tidyverse)
   
   maxage <- data %>% 
-    filter(AgeSpan > 0) %>% 
-    filter(AgeStart == max(AgeStart))
+    dplyr::filter(AgeSpan > 0) %>% 
+    dplyr::filter(AgeStart == max(AgeStart))
     
   oag_start <- maxage$AgeEnd
   

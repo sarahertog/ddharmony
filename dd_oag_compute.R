@@ -14,19 +14,19 @@ dd_oag_compute  <- function(data, age_span = c(1, 5)){
   std_ages <- std_age_function()
   
   age_std <- std_ages %>% 
-    filter(abridged == TRUE) %>% 
+    dplyr::filter(abridged == TRUE) %>% 
     select(-abridged, -complete)
   
   
   df <- data %>% 
-    filter(!is.na(DataValue) & AgeSpan %in% c(age_span, -1, -2))
+    dplyr::filter(!is.na(DataValue) & AgeSpan %in% c(age_span, -1, -2))
   
   oag_start <- data %>% dd_oag_agestart
   
   # list standard open age groups that can be computed from the complete series
   if (!is_empty(oag_start)) {
   age_std_open <- age_std %>% 
-    filter(AgeSpan < 0 & AgeStart <= oag_start & !(AgeStart %in% c(-2,0)))
+    dplyr::filter(AgeSpan < 0 & AgeStart <= oag_start & !(AgeStart %in% c(-2,0)))
   } else {
     age_std_open <- NULL
   }
@@ -37,7 +37,7 @@ dd_oag_compute  <- function(data, age_span = c(1, 5)){
   
   # look for an open age group record on input file that closes out the series
   oag_indata <- df %>% 
-    filter(AgeLabel == paste0(oag_start,"+")) %>% 
+    dplyr::filter(AgeLabel == paste0(oag_start,"+")) %>% 
     select(AgeStart, AgeEnd, AgeSpan, AgeLabel, DataValue)
 
   oag_check <- nrow(oag_indata) > 0
@@ -58,7 +58,7 @@ dd_oag_compute  <- function(data, age_span = c(1, 5)){
     data.out <- NULL
     for (i in 1:nrow(age_std_open)) {
       df.out <- df %>% 
-        filter((AgeStart >= age_std_open$AgeStart[i] & AgeSpan > 0) | AgeLabel==paste0(oag_start,"+")) %>% 
+        dplyr::filter((AgeStart >= age_std_open$AgeStart[i] & AgeSpan > 0) | AgeLabel==paste0(oag_start,"+")) %>% 
         select(AgeStart,AgeEnd,AgeSpan,AgeLabel,DataValue) %>% 
         summarise(DataValue = sum(DataValue)) %>% 
         mutate(AgeStart = age_std_open$AgeStart[i],
@@ -77,7 +77,7 @@ dd_oag_compute  <- function(data, age_span = c(1, 5)){
     data.out <- NULL
     for (i in 1:nrow(age_std_open)) {
       df.out <- df %>% 
-        filter(AgeStart < age_std_open$AgeStart[i] & AgeSpan > 0) %>% 
+        dplyr::filter(AgeStart < age_std_open$AgeStart[i] & AgeSpan > 0) %>% 
         select(AgeStart,AgeEnd,AgeSpan,AgeLabel,DataValue) %>% 
         summarise(DataValue = total_value - unknown_value - sum(DataValue)) %>% 
         mutate(AgeStart = age_std_open$AgeStart[i],

@@ -9,7 +9,7 @@ dd_oag2closed <- function(data){
   
   require(tidyverse)
   df_oag <- data %>% 
-    filter(AgeSpan == -1 & AgeStart > 0) %>% 
+    dplyr::filter(AgeSpan == -1 & AgeStart > 0) %>% 
     arrange(AgeStart)
   
   if (nrow(df_oag) > 1) {
@@ -19,7 +19,7 @@ dd_oag2closed <- function(data){
              AgeLabel = paste(AgeStart, AgeEnd-1, sep="-" ),
              DataSourceYear = NA,
              DataValue = DataValue - c(DataValue[2:nrow(df_oag)],NA)) %>% 
-      filter(AgeSpan %in% c(1,5) )
+      dplyr::filter(AgeSpan %in% c(1,5) )
   } else { df_oag_add <- NULL }
   
   return(df_oag_add)

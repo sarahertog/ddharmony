@@ -10,6 +10,6 @@
 dd_extract_single <- function(data){
   require(tidyverse)
   data.out <- data %>% 
-    filter(AgeSpan == 1 )
+    dplyr::filter(AgeSpan == 1 )
   return(data.out)
 }
