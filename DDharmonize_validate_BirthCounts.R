@@ -368,7 +368,17 @@ DDharmonize_validate_BirthCounts <- function(locid,
     distinct()
   
   out_all <- rbind(out_all, skipped) %>% 
-    arrange(id, SexID, abridged, AgeSort)
+    arrange(id, SexID, abridged, AgeSort) %>% 
+    mutate(IndicatorName = NA,
+           IndicatorName = replace(IndicatorName, abridged == TRUE, "Births by age and sex - abridged"),
+           IndicatorName = replace(IndicatorName, five_year == TRUE, "Births by age and sex - abridged"),
+           IndicatorName = replace(IndicatorName, complete == TRUE, "Births by age and sex - complete"),
+           AgeUnit = "Year",
+           SexName = NA,
+           SexName = replace(SexName, SexID == 0, "Unknown"),
+           SexName = replace(SexName, SexID == 1, "Male"),
+           SexName = replace(SexName, SexID == 2, "Female"),
+           SexName = replace(SexName, SexID == 3, "Both sexes"))
   
   if (retainKeys == FALSE) {
     out_all <- out_all %>% 
