@@ -8,7 +8,102 @@
 # ---------
 dd_validate_totals_over_sex_new <- function(data){
   
-  df <- data %>% 
+# harmonize open age group by truncating to minimum open age group of males and females  
+  abr <- data %>% 
+    dplyr::filter(abridged == TRUE)
+  
+  oa_min <- min(abr$AgeStart[abr$AgeSpan == -1 & abr$AgeLabel != "Total" & abr$SexID %in% c(1,2)])
+  
+  oa_record <- abr %>% 
+    dplyr::filter(AgeStart == oa_min & AgeSpan == -1) %>% 
+    select(-SexID, -DataValue) %>% 
+    distinct()
+  if (1 %in% abr$SexID) {
+    oa_record_m <- oa_record %>% 
+      mutate(SexID =1,
+             DataValue = sum(abr$DataValue[abr$AgeStart >= oa_min & abr$SexID ==1]))
+  } else {
+    oa_record_m <- NULL
+  }
+  if (2 %in% abr$SexID) {
+    oa_record_f <- oa_record %>% 
+      mutate(SexID =2,
+             DataValue = sum(abr$DataValue[abr$AgeStart >= oa_min & abr$SexID ==2]))
+  } else {
+    oa_record_f <- NULL
+  }
+  if (3 %in% abr$SexID) {
+    oa_record_b <- oa_record %>% 
+      mutate(SexID =3,
+             DataValue = sum(abr$DataValue[abr$AgeStart >= oa_min & abr$SexID ==3]))
+  } else {
+    oa_record_b <- NULL
+  }
+  if (0 %in% abr$SexID) {
+    oa_record_o <- oa_record %>% 
+      mutate(SexID =0,
+             DataValue = sum(abr$DataValue[abr$AgeStart >= oa_min & abr$SexID ==0])) 
+  } else {
+    oa_record_o <- NULL
+  }
+  
+  abr <- abr %>% 
+    dplyr::filter(AgeStart < oa_min) %>% 
+    bind_rows(oa_record_m, oa_record_f, oa_record_b, oa_record_o) %>% 
+    arrange(SexID, AgeStart)
+  
+  cpl <- data %>% 
+    dplyr::filter(complete == TRUE)
+  
+  if (nrow(cpl) > 50){ # only bother with this if complete series is usable
+    
+      oa_min <- min(cpl$AgeStart[cpl$AgeSpan == -1 & cpl$AgeLabel != "Total" & cpl$SexID %in% c(1,2)])
+      oa_record <- cpl %>% 
+        dplyr::filter(AgeStart == oa_min & AgeSpan == -1) %>% 
+        select(-SexID, -DataValue) %>% 
+        distinct()
+      if (1 %in% cpl$SexID) {
+      oa_record_m <- oa_record %>% 
+        mutate(SexID =1,
+               DataValue = sum(cpl$DataValue[cpl$AgeStart >= oa_min & cpl$SexID ==1]))
+      } else {
+        oa_record_m <- NULL
+      }
+      if (2 %in% cpl$SexID) {
+      oa_record_f <- oa_record %>% 
+        mutate(SexID =2,
+               DataValue = sum(cpl$DataValue[cpl$AgeStart >= oa_min & cpl$SexID ==2]))
+      } else {
+        oa_record_f <- NULL
+      }
+      if (3 %in% cpl$SexID) {
+      oa_record_b <- oa_record %>% 
+        mutate(SexID =3,
+               DataValue = sum(cpl$DataValue[cpl$AgeStart >= oa_min & cpl$SexID ==3]))
+      } else {
+        oa_record_b <- NULL
+      }
+      if (0 %in% cpl$SexID) {
+      oa_record_o <- oa_record %>% 
+        mutate(SexID =0,
+               DataValue = sum(cpl$DataValue[cpl$AgeStart >= oa_min & cpl$SexID ==0])) 
+      } else {
+        oa_record_o <- NULL
+      }
+      
+      cpl <- cpl %>% 
+        dplyr::filter(AgeStart < oa_min) %>% 
+        bind_rows(oa_record_m, oa_record_f, oa_record_b, oa_record_o) %>% 
+        arrange(SexID, AgeStart)
+  } else {
+    cpl <- NULL
+  }
+
+  df <- rbind(abr, cpl)
+  
+  
+  # now validate totals over sex
+  df <- df %>% 
     mutate(SexID = paste0("X", SexID)) %>% 
     spread(key = SexID, value = DataValue)
 
@@ -24,6 +119,10 @@ dd_validate_totals_over_sex_new <- function(data){
   if (!("X3" %in% names(df))) {
     df$X3 <- 0
   } 
+  
+  # truncate each series to the min open age group of either males or females
+  abr <- df %>% 
+    dplyr::filter(abridged == TRUE)
 
   data.out <- df %>% 
     mutate(X0 = replace(X0, is.na(X0), 0),

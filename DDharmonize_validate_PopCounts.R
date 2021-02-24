@@ -80,7 +80,7 @@ DDharmonize_validate_PopCounts <- function(locid,
       for (j in 1:nrow(sex0_orig)) {
         sex0_df$DataValue[sex0_df$AgeLabel == sex0_orig$AgeLabel[j]] <- sex0_orig$DataValue[j]
       }
-      pop5_std <- rbind(pop5_std[pop5_std$SexID %in% c(1,2,3),], sex0_df[sex0_df$AgeLabel != "Total",])
+      pop5_std <- rbind(pop5_std[pop5_std$SexID %in% c(1,2),], sex0_df[sex0_df$AgeLabel != "Total",])
       rm(sex0_df, sex0_orig)
     }
     
@@ -98,7 +98,7 @@ DDharmonize_validate_PopCounts <- function(locid,
     # 4.b As with abridged, deal with incomplete series of SexID = 0
     
     if (0 %in% pop1_std$SexID) {
-      sex0_df <- unique(pop1_std[pop1_std$SexID %in% c(1,2,3), 
+      sex0_df <- unique(pop1_std[pop1_std$SexID %in% c(1,2), 
                                  c("AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "abridged", "complete", "series")]) %>% 
         mutate(SexID = 0,
                DataSourceYear = NA,
