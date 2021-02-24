@@ -75,7 +75,7 @@ DDharmonize_Pop1 <- function (indata) {
           group_by(AgeLabel) %>% 
           mutate(keeping = max(sorting)) %>% 
           ungroup() %>% 
-          filter(sorting == keeping) %>% 
+          dplyr::filter(sorting == keeping) %>% 
           select(-sorting, -keeping)
 
        # if no record for unknown age, set data value to zero
