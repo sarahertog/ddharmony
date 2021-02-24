@@ -65,6 +65,25 @@ DDharmonize_validate_PopCounts <- function(locid,
       pop5_std <- DDharmonize_Pop5(indata = pop5_raw)
     } else { pop5_std <- NULL }
     
+    # 2.b Often the series for SexID == 0 (other) has records only when the DataValue is non-zero
+    # To prevent errors later on, we need to fill in zeros 
+    # This is a really clumsy way to do this -- will improve later on
+    
+    if (0 %in% pop5_std$SexID) {
+      sex0_df <- unique(pop5_std[pop5_std$SexID %in% c(1,2,3), 
+                                 c("AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "abridged", "complete", "series")]) %>% 
+        mutate(SexID = 0,
+               DataSourceYear = NA,
+               DataValue = 0,
+               note = NA)
+      sex0_orig <- unique(pop5_std[pop5_std$SexID == 0 & pop5_std$DataValue > 0, c("AgeLabel", "DataValue")])
+      for (j in 1:nrow(sex0_orig)) {
+        sex0_df$DataValue[sex0_df$AgeLabel == sex0_orig$AgeLabel[j]] <- sex0_orig$DataValue[j]
+      }
+      pop5_std <- rbind(pop5_std[pop5_std$SexID %in% c(1,2,3),], sex0_df[sex0_df$AgeLabel != "Total",])
+      rm(sex0_df, sex0_orig)
+    }
+    
 
     # 3. isolate records from the "Population1" indicator
     pop1_raw <- pop_raw %>% 
@@ -75,6 +94,23 @@ DDharmonize_validate_PopCounts <- function(locid,
       print("harmonizing Population1")
       pop1_std <- DDharmonize_Pop1(indata = pop1_raw)
     } else { pop1_std <- NULL }
+    
+    # 4.b As with abridged, deal with incomplete series of SexID = 0
+    
+    if (0 %in% pop1_std$SexID) {
+      sex0_df <- unique(pop1_std[pop1_std$SexID %in% c(1,2,3), 
+                                 c("AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "abridged", "complete", "series")]) %>% 
+        mutate(SexID = 0,
+               DataSourceYear = NA,
+               DataValue = 0,
+               note = NA)
+      sex0_orig <- unique(pop1_std[pop1_std$SexID == 0 & pop1_std$DataValue > 0, c("AgeLabel", "DataValue")])
+      for (j in 1:nrow(sex0_orig)) {
+        sex0_df$DataValue[sex0_df$AgeLabel == sex0_orig$AgeLabel[j]] <- sex0_orig$DataValue[j]
+      }
+      pop1_std <- rbind(pop1_std[pop1_std$SexID %in% c(1,2,3),], sex0_df[sex0_df$AgeLabel != "Total",])
+      rm(sex0_df, sex0_orig)
+    }
     
     # 5. reconcile abridged and complete series, as necessary
     if(!is.null(pop5_std)) {
@@ -156,7 +192,7 @@ DDharmonize_validate_PopCounts <- function(locid,
              DataReliabilitySort    = pop_raw$DataReliabilitySort[1],
              ModelPatternName       = pop_raw$ModelPatternName[1],
              PeriodTypeName         = pop_raw$PeriodTypeName[1],
-             PeriodGroupName        = pop_raw$PeriodGroupName[1],)
+             PeriodGroupName        = pop_raw$PeriodGroupName[1])
 
     pop_std_all[[i]] <- pop_all
     
@@ -255,18 +291,19 @@ DDharmonize_validate_PopCounts <- function(locid,
   for (i in 1:length(ids)) {
 
   dd_one_id <- pop_std_full %>% 
-    dplyr::filter(id == ids[i] & SexID %in% c(1,2,3))
+    dplyr::filter(id == ids[i] & SexID %in% c(0,1,2,3)) %>% 
+    select(-note, -series)
+  
+  # ensure that both sexes values = males + females
+  # also redistribute values for SexID == 0 across males and females
+  dd_one_id <- dd_validate_totals_over_sex_new(data = dd_one_id)
   
   # reconcile reported and computed totals over age
-  # see note on "Total" record that indicates if difference was greater than 2.5% and thus irreconcilable
   dd_one_id <- dd_validate_totals_over_age(data = dd_one_id)
   
   # distribute unkowns by age
   dd_one_id <- dd_distribute_unknowns(data = dd_one_id)
   
-  # ensure that both sexes values = males + females
-  dd_one_id <- dd_validate_totals_over_sex(data = dd_one_id)
-    
   pop_std_valid[[i]] <- dd_one_id
   
   }
