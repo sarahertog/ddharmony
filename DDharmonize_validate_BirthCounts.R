@@ -40,7 +40,9 @@ DDharmonize_validate_BirthCounts <- function(locid,
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
     dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
-           DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
+           DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)',
+           DataTypeName!= 'Reverse survival method',
+           DataTypeName!= 'Birth histories') %>% 
     mutate(id = paste(LocID, LocName, DataProcess, "Births", TimeLabel, DataProcessType, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
  
