@@ -44,9 +44,9 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   # 2. Parse the census population counts by single year of age
   pop1 <- dd_census_extract %>% dplyr::filter(complete == TRUE) %>% 
     arrange(SexID, AgeStart)
-
-  maxage <- max(pop1$AgeStart)
   
+  maxage <- ifelse(nrow(pop1) > 0, max(pop1$AgeStart), 0)
+
   pop_smoothed_out <- NULL  
   # 3. Proceed with single age data if the open age group is age 50 or higher
   if (nrow(pop1) > 0 & maxage >= 50) {
@@ -155,7 +155,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       pop5 <- pop5 %>% dplyr::filter(five_year)
     }
     
-    maxage <- max(pop5$AgeStart)
+    maxage <- ifelse(nrow(pop5) > 0, max(pop5$AgeStart), 0)
     
     # 5. Proceed with abridged/five year data if the open age group is age 50 or higher
     if (nrow(pop5) > 0 & maxage >= 50) {
@@ -210,7 +210,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
       # 5.e. identify whether to use the unsmoothed or smoothed 5-year data
       
-      pop_smoothed_out$Summary$BestGrad5 <- getBestGrad5(SummaryTbl = Summary, EduYrs_f = EduYrs_f, EduYrs_m = EduYrs_m)
+      pop_smoothed_out$Summary$BestGrad5 <- getBestGrad5(SummaryTbl = pop_smoothed_out$Summary, EduYrs_f = EduYrs_f, EduYrs_m = EduYrs_m)
       
       # 5.f. name the best smoothed series
       pop_smoothed_out$Summary$BestSmthLabel <- paste0("p5mav",sprintf("%02d", pop_smoothed_out$Summary$BestGrad5))

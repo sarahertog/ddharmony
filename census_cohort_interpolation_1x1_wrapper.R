@@ -32,6 +32,7 @@ for (i in 1:(length(refdates)-1)) {
     date1 = date1,
     date2 = date2,
     age1 = 0:100,
+    age2 = 0:100,
     midyear = midyear)
   icm_all <- cbind(icm_all, icm)
 
@@ -44,6 +45,7 @@ for (i in 1:(length(refdates)-1)) {
     date1 = date1,
     date2 = date2,
     age1 = 0:100,
+    age2 = 0:100,
     midyear = midyear)
   icf_all <- cbind(icf_all, icf)
   
