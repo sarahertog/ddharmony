@@ -18,7 +18,8 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                                                                AsfrMat = NULL,
                                                                AsfrDatesIn = NULL,
                                                                SRB = NULL,
-                                                               SRBDatesIn = NULL) {
+                                                               SRBDatesIn = NULL,
+                                                               OAnew = 101) {
   
   # 1. check that data meet some basic requirements
   nids <- length(unique(dd_census_extract$id))
@@ -259,9 +260,9 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     # SummaryTbl$TotPopBestAdjBP[SummaryTbl$id == ids[i]][1] <- sum(BPout$BestSmthAdjBP$BestSmthAdjBP[BPout$BestSmthAdjBP$SexID == 1])
     # SummaryTbl$TotPopBestAdjBP[SummaryTbl$id == ids[i]][2] <- sum(BPout$BestSmthAdjBP$BestSmthAdjBP[BPout$BestSmthAdjBP$SexID == 2])
   
-  # 7. Extend to open age group 100+ (as needed), using OPAG
+  # 7. Extend to open age group OAnew (as needed), using OPAG
   
-  if (maxage < 100) {
+  if (maxage < OAnew) {
     OPAG_m <- OPAG_wrapper(Pop = BP_out$BestSmthAdjBP$BestSmthAdjBP[BP_out$BestSmthAdjBP$SexID == 1],
                            Age = BP_out$BestSmthAdjBP$AgeStart[BP_out$BestSmthAdjBP$SexID == 1],
                            LocID = locid, 
@@ -271,7 +272,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                            Age_nLx = Age_nLx,
                            AgeInt_nLx = AgeInt_nLx,
                            cv_tolerance = 0.75,
-                           OAnew = 100)
+                           OAnew = OAnew)
     
     OPAG_f <- OPAG_wrapper(Pop = BP_out$BestSmthAdjBP$BestSmthAdjBP[BP_out$BestSmthAdjBP$SexID == 2],
                            Age = BP_out$BestSmthAdjBP$AgeStart[BP_out$BestSmthAdjBP$SexID == 2],
@@ -282,31 +283,36 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                            Age_nLx = Age_nLx,
                            AgeInt_nLx = AgeInt_nLx,
                            cv_tolerance = 0.75,
-                           OAnew = 100)
+                           OAnew = OAnew)
     
     OPAG_out <- list(OPAG_m = OPAG_m,
                      OPAG_f = OPAG_f)
     
-    census_pop_out <- data.frame(SexID = c(rep(1,101), rep(2,101)),
-                                 AgeStart = rep(0:100,2),
+    census_pop_out <- data.frame(SexID = c(rep(1,OAnew+1), rep(2,OAnew+1)),
+                                 AgeStart = rep(0:OAnew,2),
                                  DataValue = c(OPAG_m$pop_ext, OPAG_f$pop_ext))
   
   } else { # if no extension necessary
     
     OPAG_out <- NULL
-    census_pop_out <- data.frame(SexID = c(rep(1,101), rep(2,101)),
-                                 AgeStart = rep(0:100,2),
+    census_pop_out <- data.frame(SexID = c(rep(1,OAnew+1), rep(2,OAnew+1)),
+                                 AgeStart = rep(0:OAnew,2),
                                  DataValue = c(BP_out$BestSmthAdjBP$BestSmthAdjBP[BP_out$BestSmthAdjBP$SexID == 1], 
                                                BP_out$BestSmthAdjBP$AgeStart[BP_out$BestSmthAdjBP$SexID == 2]))
   }
   
-  # append some identifying information to the output census series
+  # append some identifying information to the output census series to make it easier to transform to matrix later on
   census_pop_out$LocID <- locid  
   census_pop_out$census_year <- census_year
   census_pop_out$census_reference_date <- census_reference_date
   
   # compile all of the outputs
-  census_adjust_smooth_extend_out <- list(census_pop_in = census_pop_in,
+  census_adjust_smooth_extend_out <- list(LocID = locid,
+                                          LocName = dd_census_extract$LocName[1],
+                                          census_year = census_year,
+                                          census_reference_date = census_reference_date,
+                                          census_data_source = dd_census_extract$id[1],
+                                          census_pop_in = census_pop_in,
                                           census_pop_out = census_pop_out,
                                           pop_adjusted_out = pop_adjusted_out,
                                           pop_smoothed_out = pop_smoothed_out,

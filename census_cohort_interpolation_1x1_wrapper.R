@@ -31,8 +31,8 @@ for (i in 1:(length(refdates)-1)) {
     c2 = popm2,
     date1 = date1,
     date2 = date2,
-    age1 = 0:100,
-    age2 = 0:100,
+    age1 = 0:(length(popm1)-1),
+    age2 = 0:(length(popm2)-1),
     midyear = midyear)
   icm_all <- cbind(icm_all, icm)
 
@@ -44,8 +44,8 @@ for (i in 1:(length(refdates)-1)) {
     c2 = popf2,
     date1 = date1,
     date2 = date2,
-    age1 = 0:100,
-    age2 = 0:100,
+    age1 = 0:(length(popf1)-1),
+    age2 = 0:(length(popf2)-1),
     midyear = midyear)
   icf_all <- cbind(icf_all, icf)
   
