@@ -1,13 +1,17 @@
+## --------------------------------------------------------------------------------
+## Load and manipulate the 5 year population data
+## --------------------------------------------------------------------------------
+
 pop_load <- function(){
 
-pop5_df0 <- read_xlsx("Shel/WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.xlsx")
+pop5_df0 <- read_xlsx("Shel/data/WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.xlsx")
 pop5_df <- pop5_df0[-1:-11, ] 
 
 colnames(pop5_df) <- pop5_df[1,]
 pop5_df <- pop5_df[-1, ]
 
 
-#### 5.) Reshape the data so that we have age labels on one column, and population counts in another, and rename the agelabel variable to AgeLabel_denom.
+#### Reshape the data so that we have age labels on one column, and population counts in another, and rename the agelabel variable to AgeLabel_denom.
 
 pop5_df <- pop5_df %>% 
   mutate(`Country code` = as.numeric(trimws(`Country code`))) %>% 

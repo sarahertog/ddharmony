@@ -1,25 +1,23 @@
+## --------------------------------------------------------------------------------------------
+## Merge the population data and births data, and generate age specific birth rate estimates.
+## --------------------------------------------------------------------------------------------
+
 estimates_func <- function(data){
   
   if(nrow(data) > 0){
     
   births_df <- data
 
-    
-
-  #### 5.) Merge the births data with the Location data
+  ### Merge the births data with the Location data
   births_df2 <- Locations %>% 
     right_join(.,births_df , by = c("LocID", "LocName")) %>% 
     rename(AgeLabel_num = AgeLabel)
   
-  #### 6.) Extract the 5-year counts and rename the agelabel variable to AgeLabel_num.
-  
-  
+  ### Extract the 5-year counts and rename the agelabel variable to AgeLabel_num.
   births_df2_5 <- births_df2 %>% 
     filter(five_year == TRUE)
   
-  
-  
-  #### 7.) Generate a variable that shows the maximum age label
+  ### Generate a variable that shows the maximum age label
   
   if(nrow(births_df2_5) >0){
     
@@ -36,11 +34,8 @@ estimates_func <- function(data){
   
   births_df2_5 <- births_df2_5 %>% 
     mutate(TimeLabel = as.character(TimeLabel))
-  
-  
-  
-  
-  #### 8.) Merge the population data with the births data.
+
+  ### Merge the population data with the births data.
   
   merged_df <- pop5_df %>% 
     #mutate(LocID = as.numeric(trimws(LocID))) %>% 
@@ -55,7 +50,7 @@ estimates_func <- function(data){
     merged_df$max_age <- NA
   }
   
-  ## Fill in the missing values
+  ### Fill in the missing values
   merged_df <- merged_df %>% 
     group_by(TimeLabel) %>% 
     mutate(id = na.locf0(id),
@@ -65,7 +60,7 @@ estimates_func <- function(data){
     mutate(max_age = ifelse(all(is.na(births.count)), NA, max_age)) %>% 
     ungroup()
   
-  ## Split age label into ll and ul. 
+  ### Split age label into ll and ul. 
   merged_df <- merged_df %>% 
     separate(AgeLabel, into = c("ll", "ul"), sep = "-", remove = FALSE) %>% 
     mutate(ul = ifelse(is.na(ul) & 
@@ -82,7 +77,7 @@ estimates_func <- function(data){
                                      pop.count))) %>% 
     ungroup()
   
-  ## Drop the ages that have been collapsed into a smaller bracket
+  ### Drop the ages that have been collapsed into a smaller bracket
   merged_df <- merged_df %>% 
     mutate(todrop = ifelse(AgeLabel == max_age & is.na(births.count) & !is.na(pop.count),
                            "drop", "keep")) %>% 
@@ -92,23 +87,18 @@ estimates_func <- function(data){
     select(-ll, -ul, -max_age, -juncture, -todrop, -max_age2) %>% 
     ungroup()
   
-  ## Generate a variable that shows whether births are missing, and another that shows whether population counts are missing
+  ### Generate a variable that shows whether births are missing, and another that shows whether population counts are missing
   merged_df <- merged_df %>% 
     group_by(id, TimeLabel) %>% 
     mutate(missing_births = ifelse(all(is.na(births.count)|all(births.count == 0)), TRUE, FALSE),
            missing_popcounts = ifelse(all(is.na(pop.count)|all(pop.count == 0)), TRUE, FALSE)) %>% 
     ungroup()
   
-  
-  
-  
-  #### 9.) Calculate the age specific birth rates for each of the years and age labels.
-  
-  
+  ### Calculate the age specific birth rates for each of the years and age labels.
   merged_df <- merged_df %>% 
     mutate(asbr = births.count / pop.count)
   
-  #### 10.) Reshape the data so that we have category on one variable (pop.count, births.count, asbr).
+  ### Reshape the data so that we have category on one variable (pop.count, births.count, asbr).
   
   merged_df2 <- merged_df %>% 
     select(-Index, -AgeStart, -AgeEnd, -AgeSpan, -AgeSort, -abridged, -complete, 
@@ -130,6 +120,7 @@ estimates_func <- function(data){
     merged_df2$Total <- NA
   }
   
+  ### Re-order the variables
   vars <- c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30+" , "30-34","35-39","40+", "40-44", "45+", "45-49", "50+", "50-54", "55+", "55-59","60+",  "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-99", "100+")
   
   merged_df2 <- merged_df2 %>% 
@@ -139,10 +130,18 @@ estimates_func <- function(data){
     select(-Variant: -category, -Total) %>% 
     names()
   
-  
-  merged_df2$Total <- ifelse(is.na(merged_df2$Total), 
+  ### Calculate population count totals and birth count totals in cases where they are missing
+  merged_df2$Total <- ifelse(is.na(merged_df2$Total) & merged_df2$category != "asbr", 
                              apply(merged_df2[,agelabel_vars], 1, function(x) 
                                sum(x, na.rm = TRUE)),merged_df2$Total)
+  merged_df2$dummy_total <- apply(merged_df2[,agelabel_vars], 1, function(x) 
+    sum(x, na.rm = TRUE))
+  
+  merged_df2$Total <- ifelse(is.na(merged_df2$Total) & merged_df2$category == "asbr" &
+                               merged_df2$dummy_total==0, 0,merged_df2$Total) 
+
+  merged_df2 <- merged_df2 %>% 
+    select(-dummy_total)
   
   # vars <- grep("\\d", names(merged_df2), value = TRUE)
   # vars <- vars[!vars %in% "ISO3Alpha"]
