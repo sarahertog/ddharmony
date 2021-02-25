@@ -69,6 +69,7 @@ pop5_df <- pop5_df[-1, ]
 
 ```{r, message=FALSE, warning=FALSE}
 pop5_df <- pop5_df %>% 
+  mutate(`Country code` = as.numeric(trimws(`Country code`))) %>% 
   gather("AgeLabel_denom", "pop.count", contains("-"), contains("+")) %>% 
   rename(LocID = `Country code`,
          TimeLabel = `Reference date (as of 1 July)`) 
@@ -92,7 +93,7 @@ pop5_df <- pop5_df %>%
 
 ```{r, message=FALSE, warning=FALSE}
 # lid <- sample(unique(pop5_df$LocID), 1)
-lid <- 620
+lid <- 466
 pop5_df2 <- pop5_df %>% 
   filter(LocID == lid)
 
@@ -121,25 +122,25 @@ births_vr <- try(DDharmonize_validate_BirthCounts(locid = lid, process = "vr", t
 # Births by age of mother: census
 births_census <- try(DDharmonize_validate_BirthCounts(locid = lid, process = "census", times = 1950:2020, retainKeys = TRUE))
 
-if(any(class(births_vr) %in% "data.frame") & any(class(births_census) %in% "data.frame")){
-  
-    common = names(births_vr)[names(births_vr) %in% names(births_census)]
-  births_census[common] <- lapply(common, function(x) {
-    match.fun(paste0("as.", class(births_vr[[x]])))(births_census[[x]])})
-  
-  births_df <- bind_rows(births_vr,births_census )
-}else
- if(any(class(births_vr) %in% "data.frame") & any(!class(births_census) %in% "data.frame" )){
-  births_df <- births_vr
-}else 
- if(any(!class(births_vr) %in% "data.frame") & any(class(births_census) %in% "data.frame" )){  births_df <- births_census
- }  
-
+# if(any(class(births_vr) %in% "data.frame") & any(class(births_census) %in% "data.frame")){
+#   
+#     common = names(births_vr)[names(births_vr) %in% names(births_census)]
+#   births_census[common] <- lapply(common, function(x) {
+#     match.fun(paste0("as.", class(births_vr[[x]])))(births_census[[x]])})
+#   
+#   births_df <- bind_rows(births_vr,births_census )
+# }else
+#  if(any(class(births_vr) %in% "data.frame") & any(!class(births_census) %in% "data.frame" )){
+#   births_df <- births_vr
+# }else 
+#  if(any(!class(births_vr) %in% "data.frame") & any(class(births_census) %in% "data.frame" )){  births_df <- births_census
+#  }  
+births_df <- births_census
 
 ```
 
 
-#### 5.) Merge this data with the Location data
+#### 5.) Merge the births data with the Location data
 
 ```{r, message=FALSE, warning=FALSE}
 births_df2 <- Locations %>% 
@@ -183,9 +184,9 @@ births_df2_5 <- births_df2_5 %>%
 
 ```{r, message=FALSE, warning=FALSE}
 merged_df <- pop5_df2 %>% 
-  mutate(LocID = as.numeric(trimws(LocID))) %>% 
+  #mutate(LocID = as.numeric(trimws(LocID))) %>% 
   #        TimeLabel = as.numeric(trimws(TimeLabel))) %>% 
-  full_join(., births_df2_5, by = c("LocID", "TimeLabel", "AgeLabel_denom" = "AgeLabel_num")) %>% 
+  full_join(.,births_df2_5 , by = c("LocID", "TimeLabel",  "AgeLabel_denom" = "AgeLabel_num")) %>% 
   rename(births.count = DataValue, 
          AgeLabel = AgeLabel_denom) %>% 
   relocate(c(TimeLabel, AgeLabel, pop.count, births.count), .after = last_col()) %>% 
@@ -197,13 +198,15 @@ merged_df$max_age <- NA
 
 ## Fill in the missing values
 merged_df <- merged_df %>% 
-  mutate(id = na.locf0(id, fromLast = TRUE),
+  group_by(TimeLabel) %>% 
+  mutate(id = na.locf0(id),
          max_age = na.locf0(max_age, fromLast = TRUE)) %>% 
+  ungroup() %>% 
   group_by(id, TimeLabel) %>% 
   mutate(max_age = ifelse(all(is.na(births.count)), NA, max_age)) %>% 
   ungroup()
 
-## Split age labe into ll and ul. 
+## Split age label into ll and ul. 
 merged_df <- merged_df %>% 
   separate(AgeLabel, into = c("ll", "ul"), sep = "-", remove = FALSE) %>% 
   mutate(ul = ifelse(is.na(ul) & 
@@ -272,7 +275,7 @@ if(!"Total" %in% names(merged_df2)){
   merged_df2$Total <- NA
 }
   
-  vars <- c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34","35-39","40+", "40-44", "45+", "45-49", "50+", "50-54", "55+", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-99", "100+")
+  vars <- c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30+" , "30-34","35-39","40+", "40-44", "45+", "45-49", "50+", "50-54", "55+", "55-59","60+",  "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-99", "100+")
   
 merged_df2 <- merged_df2 %>% 
   select(Variant: category, any_of(vars) , 
@@ -287,6 +290,12 @@ merged_df2$Total <- ifelse(is.na(merged_df2$Total),
                            apply(merged_df2[,agelabel_vars], 1, function(x) 
                              sum(x, na.rm = TRUE)),merged_df2$Total)
 
+vars <- grep("\\d", names(merged_df2), value = TRUE)
+vars <- vars[!vars %in% "ISO3Alpha"]
+
+merged_df2 <- merged_df2 %>% 
+  select(id, TimeLabel:category, any_of(vars) ,  Total)
+
 ```
 
 
@@ -297,4 +306,7 @@ asbr5_df <- merged_df2 %>%
   filter(category == "asbr")
 ```
 
+```{r}
+# 234, 292, 500, 584 missing from pop data.
+```
 
