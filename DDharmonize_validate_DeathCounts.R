@@ -313,10 +313,7 @@ if (nrow(vitals_std_all) > 0) {
     
   skipped <- dd_extract %>% 
     dplyr::filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
-    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
-           DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
-           AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
+    select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
            complete = FALSE,
