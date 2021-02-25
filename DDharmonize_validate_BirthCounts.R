@@ -203,14 +203,18 @@ DDharmonize_validate_BirthCounts <- function(locid,
              id_series = paste(id, series, sep = " - "),
              LocName                = vitals_raw$LocName[1],
              LocID                  = vitals_raw$LocID[1],
+             LocTypeName            = vitals_raw$LocTypeName[1],
+             LocAreaTypeName        = vitals_raw$LocAreaTypeName[1],
+             SubGroupName           = vitals_raw$SubGroupName[1],
+             SubGroupTypeName       = vitals_raw$SubGroupTypeName[1],
              DataCatalogName        = vitals_raw$DataCatalogName[1],
-             DataCatalogID          = vitals_raw$DataCatalogID[1],
              DataProcess            = vitals_raw$DataProcess[1],
              DataProcessType        = vitals_raw$DataProcessType[1],
              ReferencePeriod        = vitals_raw$ReferencePeriod[1],
+             TimeUnit               = vitals_raw$TimeUnit[1],
              TimeStart              = vitals_raw$TimeStart[1],
-             TimeMid                = vitals_raw$TimeMid[1],
              TimeEnd                = vitals_raw$TimeEnd[1],
+             TimeMid                = vitals_raw$TimeMid[1],
              TimeLabel              = vitals_raw$TimeLabel[1],
              DataSourceName         = vitals_raw$DataSourceName[1],
              DataSourceAuthor       = vitals_raw$DataSourceAuthor[1],
@@ -221,7 +225,10 @@ DDharmonize_validate_BirthCounts <- function(locid,
              DataTypeName           = vitals_raw$DataTypeName[1],
              DataSeriesID           = vitals_raw$SeriesID[1],
              DataReliabilityName    = vitals_raw$DataReliabilityName[1],
-             DataReliabilitySort    = vitals_raw$DataReliabilitySort[1])
+             DataReliabilitySort    = vitals_raw$DataReliabilitySort[1],
+             ModelPatternName       = vitals_raw$ModelPatternName[1],
+             PeriodTypeName         = vitals_raw$PeriodTypeName[1],
+             PeriodGroupName        = vitals_raw$PeriodGroupName[1])
     }
     vitals_std_all[[i]] <- vitals_all
     
@@ -341,26 +348,28 @@ DDharmonize_validate_BirthCounts <- function(locid,
     
   vitals_valid_id <- vitals_std_valid %>% dd_rank_id_vitals
   
+  # arrange the data, with priority colums on the left and data loader keys on the right
+  first_columns <- c("id", "LocID", "LocName", "DataProcess", "ReferencePeriod", "TimeStart", "TimeMid", "SexID",
+                     "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
+                     "complete", "non_standard")
+  keep_columns <- names(vitals_std_all)
+  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", first_columns))]
+  
   out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
            DataTypeName = "Direct (age standardized)", 
            note = NA) %>% 
-    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
-           DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, five_year, abridged, complete, non_standard, SexID, AgeStart, AgeEnd, 
-           AgeLabel, AgeSpan, AgeSort, DataValue, note) 
+    select(all_of(first_columns), all_of(keep_columns)) 
         
   } else { out_all <- NULL }
   
   # 11. Look for years that are in raw data, but not in output
   #     If there are series with non-standard age groups, then add these to output as well
   
+  first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
   skipped <- dd_extract %>% 
     dplyr::filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
-    select(id, LocID, LocName, TimeLabel, TimeStart, TimeMid, TimeEnd, DataProcess, DataProcessType, DataCatalogName, DataCatalogID,
-           DataSourceName, DataSourceShortName, DataSourceAuthor, DataSourceYear, DataStatusName, StatisticalConceptName,
-           DataTypeName, DataReliabilityName, SexID, AgeStart, AgeEnd, 
-           AgeLabel, AgeSpan, AgeSort, DataValue) %>% 
+    select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
            complete = FALSE,
