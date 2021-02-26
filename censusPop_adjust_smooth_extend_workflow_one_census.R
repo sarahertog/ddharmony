@@ -53,7 +53,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   if (nrow(pop1) > 0 & maxage >= 50) {
     
     census_pop_in <- pop1 %>% 
-      filter(AgeLabel != "Total" & SexID %in% c(1,2)) %>% 
+      dplyr::filter(AgeLabel != "Total" & SexID %in% c(1,2)) %>% 
       select(SexID, AgeStart, DataValue)
     
     popM   <- census_pop_in$DataValue[census_pop_in$SexID ==1]
@@ -162,7 +162,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     if (nrow(pop5) > 0 & maxage >= 50) {
       
       census_pop_in <- pop5 %>% 
-        filter(AgeLabel != "Total" & SexID %in% c(1,2)) %>% 
+        dplyr::filter(AgeLabel != "Total" & SexID %in% c(1,2)) %>% 
         select(SexID, AgeStart, DataValue)
       
       popM   <- census_pop_in$DataValue[census_pop_in$SexID ==1]
