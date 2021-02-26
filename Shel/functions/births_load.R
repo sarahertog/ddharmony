@@ -2,7 +2,9 @@
 ## Load births data for both processes: vr and census
 ## --------------------------------------------------------------------------------
 
-births_load <- function(){
+births_load <- function(lid){
+
+lid <- lid
 
 req <- GET("https://api.github.com/repos/sarahertog/ddharmony/git/trees/main?recursive=1")
 stop_for_status(req)

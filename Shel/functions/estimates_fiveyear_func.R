@@ -2,18 +2,18 @@
 ## Merge the population data and births data, and generate age specific birth rate estimates.
 ## --------------------------------------------------------------------------------------------
 
-estimates_func <- function(data){
+estimates_fiveyear_func <- function(data){
   
   if(nrow(data) > 0){
     
   births_df <- data
 
-  ### Merge the births data with the Location data
+  ### Merge the births data with the Location data and rename the agelabel variable to AgeLabel_num
   births_df2 <- Locations %>% 
     right_join(.,births_df , by = c("LocID", "LocName")) %>% 
     rename(AgeLabel_num = AgeLabel)
   
-  ### Extract the 5-year counts and rename the agelabel variable to AgeLabel_num.
+  ### Extract the 5-year counts..
   births_df2_5 <- births_df2 %>% 
     filter(five_year == TRUE)
   
@@ -37,7 +37,7 @@ estimates_func <- function(data){
 
   ### Merge the population data with the births data.
   
-  merged_df <- pop5_df %>% 
+  merged_df <- pop_fiveyear_df %>% 
     #mutate(LocID = as.numeric(trimws(LocID))) %>% 
     #        TimeLabel = as.numeric(trimws(TimeLabel))) %>% 
     full_join(.,births_df2_5 , by = c("LocID", "TimeLabel",  "AgeLabel_denom" = "AgeLabel_num")) %>% 
@@ -60,7 +60,7 @@ estimates_func <- function(data){
     mutate(max_age = ifelse(all(is.na(births.count)), NA, max_age)) %>% 
     ungroup()
   
-  ### Split age label into ll and ul. 
+  ### Split age label into ll and ul and collapse the higher ages in the pop data to match those in the births data. 
   merged_df <- merged_df %>% 
     separate(AgeLabel, into = c("ll", "ul"), sep = "-", remove = FALSE) %>% 
     mutate(ul = ifelse(is.na(ul) & 
@@ -83,7 +83,7 @@ estimates_func <- function(data){
                            "drop", "keep")) %>% 
     filter(todrop == "keep"|is.na(todrop)) %>% 
     group_by(id) %>% 
-    mutate(pop.count = ifelse(is.na(pop.count), sum(pop.count, na.rm = TRUE), pop.count)) %>% 
+    mutate(pop.count = ifelse(is.na(pop.count)  & AgeLabel == "Total", sum(pop.count, na.rm = TRUE), pop.count)) %>% 
     select(-ll, -ul, -max_age, -juncture, -todrop, -max_age2) %>% 
     ungroup()
   

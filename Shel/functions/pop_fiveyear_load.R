@@ -2,7 +2,7 @@
 ## Load and manipulate the 5 year population data
 ## --------------------------------------------------------------------------------
 
-pop_load <- function(){
+pop_fiveyear_load <- function(lid){
 
 pop5_df0 <- read_xlsx("Shel/data/WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.xlsx")
 pop5_df <- pop5_df0[-1:-11, ] 
@@ -27,9 +27,9 @@ pop5_df <- pop5_df %>%
   mutate(pop.count = ifelse(sci_exists == 1, pop.count * 10^sci_not, 
                             pop.count)) %>% 
   select(-sci_exists, -sci_not) %>% 
-  arrange(TimeLabel)%>% 
+  arrange(TimeLabel) %>% 
   filter(LocID == lid)
 
-assign("pop5_df", pop5_df , envir = .GlobalEnv)
+assign("pop_fiveyear_df", pop5_df , envir = .GlobalEnv)
 
 }
