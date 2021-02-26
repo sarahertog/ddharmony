@@ -58,6 +58,10 @@ binder_complete <- function(lid){
       }else
         df_census <- data.frame() 
       
+      ## Make sure both datasets have variables with the same data types
+      common = names(df_vr)[names(df_vr) %in% names(df_census)]
+      df_vr[common] <- lapply(common, function(x) {
+        match.fun(paste0("as.", class(df_census[[x]])))(df_vr[[x]])})
       
       final_df <- bind_rows(df_vr, df_census)
       
