@@ -49,6 +49,7 @@ dd_validate_totals_over_sex_new <- function(data){
   
   abr <- abr %>% 
     dplyr::filter(AgeStart < oa_min) %>% 
+    dplyr::filter(!(AgeSpan == -1 & AgeLabel != "Total" & AgeStart < oa_min)) %>% # remove any oa that is below oa_min (eg. for both sexes)
     bind_rows(oa_record_m, oa_record_f, oa_record_b, oa_record_o) %>% 
     arrange(SexID, AgeStart)
   
@@ -93,6 +94,7 @@ dd_validate_totals_over_sex_new <- function(data){
       
       cpl <- cpl %>% 
         dplyr::filter(AgeStart < oa_min) %>% 
+        dplyr::filter(!(AgeSpan == -1 & AgeLabel != "Total" & AgeStart < oa_min)) %>%
         bind_rows(oa_record_m, oa_record_f, oa_record_b, oa_record_o) %>% 
         arrange(SexID, AgeStart)
   } else {
@@ -120,9 +122,6 @@ dd_validate_totals_over_sex_new <- function(data){
     df$X3 <- 0
   } 
   
-  # truncate each series to the min open age group of either males or females
-  abr <- df %>% 
-    dplyr::filter(abridged == TRUE)
 
   data.out <- df %>% 
     mutate(X0 = replace(X0, is.na(X0), 0),
