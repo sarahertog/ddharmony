@@ -277,10 +277,30 @@ if (nrow(vitals_std_all) > 0) {
   
   # ensure that both sexes values = males + females
   dd_one_id <- dd_validate_totals_over_sex(data = dd_one_id)
+  
+  # throw it out if the open age group is below 50
+  oag_check <- max(dd_one_id$AgeStart)
+  if (oag_check < 50) {
+    dd_one_id <- NULL
+  }
+  rm(oag_check)  
     
   vitals_std_valid[[i]] <- dd_one_id
   
   }
+  
+  # arrange the data, with priority colums on the left and data loader keys on the right
+  first_columns <- c("id", "LocID", "LocName", "DataProcess", "TimeStart", "TimeMid", "TimeEnd", "SexID",
+                     "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
+                     "complete", "non_standard")
+  keep_columns <- names(vitals_std_all)
+  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", "DataReliabilitySort", first_columns))]
+  
+  # initialize ref_pds and output data
+  ref_pds <- 0
+  out_all <- NULL
+  
+  if (length(vitals_std_valid) > 0) {
   
   vitals_std_valid <- do.call(rbind, vitals_std_valid) %>% 
     mutate(five_year = abridged == TRUE & AgeSpan %in% c(-1,5),
@@ -291,18 +311,13 @@ if (nrow(vitals_std_all) > 0) {
   
   vitals_valid_id <- vitals_std_valid %>% dd_rank_id_vitals 
   
-  # arrange the data, with priority colums on the left and data loader keys on the right
-  first_columns <- c("id", "LocID", "LocName", "DataProcess", "TimeStart", "TimeMid", "TimeEnd", "SexID",
-                     "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
-                     "complete", "non_standard")
-  keep_columns <- names(vitals_std_all)
-  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", "DataReliabilitySort", first_columns))]
-  
-  
-  out_all <- vitals_valid_id %>% 
+    out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
            DataTypeName = "Direct (age standardized)") %>% 
     select(all_of(first_columns), all_of(keep_columns)) 
+    
+    ref_pds <- unique(out_all$TimeLabel)      
+  }
         
 } else { out_all <- NULL }
     
@@ -313,7 +328,7 @@ if (nrow(vitals_std_all) > 0) {
                        "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue")
     
   skipped <- dd_extract %>% 
-    dplyr::filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
+    dplyr::filter(!(TimeLabel %in% ref_pds)) %>% 
     select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
