@@ -305,39 +305,54 @@ DDharmonize_validate_PopCounts <- function(locid,
   # distribute unkowns by age
   dd_one_id <- dd_distribute_unknowns(data = dd_one_id)
   
+  # throw it out if the open age group is below 50
+  oag_check <- max(dd_one_id$AgeStart)
+  if (oag_check < 50) {
+    dd_one_id <- NULL
+  }
+  rm(oag_check)  
   pop_std_valid[[i]] <- dd_one_id
   
   }
   
-  pop_std_valid <- do.call(rbind, pop_std_valid) %>% 
-    mutate(five_year = abridged == TRUE & AgeSpan %in% c(-1,5),
-           abridged = abridged == TRUE & AgeLabel != "0-4")
-  
-  
-  # 10.  When there is more than one id for a given census year, select the most authoritative
-  
-  pop_valid_id <- pop_std_valid %>% dd_rank_id 
-  
-  # arrange the data, with priority colums on the left and data loader keys on the right
+  # define how we want to arrange the data, with priority colums on the left and data loader keys on the right
   first_columns <- c("id", "LocID", "LocName", "DataProcess", "ReferencePeriod", "TimeStart", "TimeMid", "SexID",
                      "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
                      "complete", "non_standard")
   keep_columns <- names(pop_std_all)
   keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", first_columns))]
   
+  # initialize ref_pds and output data
+  ref_pds <- 0
+  out_all <- NULL
   
-  out_all <- pop_valid_id %>% 
-    mutate(non_standard = FALSE,
-           DataTypeName = "Direct (age standardized)") %>% 
-    select(all_of(first_columns), all_of(keep_columns)) 
-        
+  if (length(pop_std_valid) > 0) {
+    
+    pop_std_valid <- do.call(rbind, pop_std_valid) %>% 
+      mutate(five_year = abridged == TRUE & AgeSpan %in% c(-1,5),
+             abridged = abridged == TRUE & AgeLabel != "0-4")
+    
+    
+    # 10.  When there is more than one id for a given census year, select the most authoritative
+    
+    pop_valid_id <- pop_std_valid %>% dd_rank_id 
+    
+    
+    
+    out_all <- pop_valid_id %>% 
+      mutate(non_standard = FALSE,
+             DataTypeName = "Direct (age standardized)") %>% 
+      select(all_of(first_columns), all_of(keep_columns)) 
+    
+    ref_pds <- unique(out_all$ReferencePeriod)      
+  }
   
   # 11. Look for censuses years that are in raw data, but not in output
   #     If there are series with non-standard age groups, then add these to output as well
   
   first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
   skipped <- dd_extract %>% 
-    dplyr::filter(!(ReferencePeriod %in% out_all$ReferencePeriod)) %>% 
+    dplyr::filter(!(ReferencePeriod %in% ref_pds)) %>% 
     select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
