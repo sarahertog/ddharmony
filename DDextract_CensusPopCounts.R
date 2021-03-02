@@ -3,7 +3,7 @@
 # and create unique id according to Census year, Data Source, Statistical Concept, Data Type
 # other fields needed?
 
-DDextract_CensusPopCounts <- function(locid, start_year, end_year) {
+DDextract_CensusPopCounts <- function(locid, start_year, end_year, DataSourceShortName = NULL, DataSourceYear = NULL) {
   
   # Abridged or five year age groups
   tryCatch({
@@ -13,7 +13,9 @@ DDextract_CensusPopCounts <- function(locid, start_year, end_year) {
                                    startYear = start_year,
                                    endYear = end_year,
                                    locAreaTypeIds = 2, # whole area (as opposed to urban/rural or some other sub-national unit)
-                                   subGroupIds = 2) # Total or all groups (as opposed to some population
+                                   subGroupIds = 2, # Total or all groups (as opposed to some population subgroup)
+                                   dataSourceShortNames = DataSourceShortName,
+                                   dataSourceYears = DataSourceYear) 
   }, error=function(e){cat("Error in file", conditionMessage(e), "\n")})
   
   if (exists('pop_abridged')) {
@@ -29,7 +31,9 @@ DDextract_CensusPopCounts <- function(locid, start_year, end_year) {
                                    startYear = start_year,
                                    endYear = end_year,
                                    locAreaTypeIds = 2, # whole area (as opposed to urban/rural or some other sub-national unit)
-                                   subGroupIds = 2) # Total or all groups (as opposed to some population
+                                   subGroupIds = 2, # Total or all groups (as opposed to some population subgroup)
+                                   dataSourceShortNames = DataSourceShortName,
+                                   dataSourceYears = DataSourceYear) 
   }, error=function(e){cat("Error in file", conditionMessage(e), "\n")})
 
   if (exists('pop_single')) {

@@ -6,7 +6,9 @@
 DDextract_VitalCounts <- function(locid, 
                                   type = c("births","deaths"), 
                                   process = c("census","vr"),
-                                  start_year, end_year) {
+                                  start_year, end_year, 
+                                  DataSourceShortName = NULL, 
+                                  DataSourceYear = NULL) {
   
   if (type == "births") {
     indicator_ids <- c(159,170) # total births and births by age of mother
@@ -24,7 +26,9 @@ DDextract_VitalCounts <- function(locid,
                                    startYear = start_year,
                                    endYear = end_year,
                                    locAreaTypeIds = 2, # whole area (as opposed to urban/rural or some other sub-national unit)
-                                   subGroupIds = 2) # Total or all groups (as opposed to some population
+                                   subGroupIds = 2, # Total or all groups (as opposed to some population subgroup)
+                                   dataSourceShortNames = DataSourceShortName,
+                                   dataSourceYears = DataSourceYear) 
   }, error=function(e){cat("Error in file", conditionMessage(e), "\n")})
   
   if (exists('vital_counts')) {

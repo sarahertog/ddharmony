@@ -12,6 +12,8 @@
 DDharmonize_validate_DeathCounts <- function(locid, 
                                            times, 
                                            process = c("census", "vr"),
+                                           DataSourceShortName = NULL,
+                                           DataSourceYear = NULL,
                                            retainKeys = FALSE, 
                                            server = "https://popdiv.dfs.un.org/DemoData/api/") {
   
@@ -32,7 +34,9 @@ DDharmonize_validate_DeathCounts <- function(locid,
                                       type = "deaths",
                                       process = process,
                                       start_year = times[1],
-                                      end_year = times[length(times)])
+                                      end_year = times[length(times)],
+                                      DataSourceShortName = DataSourceShortName,
+                                      DataSourceYear = DataSourceYear) 
   
   if (!is.null(dd_extract)) {
     
