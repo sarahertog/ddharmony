@@ -28,7 +28,7 @@ OPAG_wrapper <- function(Pop,
     #nLx   <- downloadnLx(NULL, LocID, sex, Year) # WPP19 Lx has oag = 100+
     
     # download life table
-    lt_abr <- fertestr::FetchLifeTableWpp2019(locations = DemoToolsData::WPP_codes$LocName[DemoToolsData::WPP_codes$LocID==LocID], 
+    lt_abr <- fertestr::FetchLifeTableWpp2019(locations = LocID, 
                                               year = Year,
                                               sex = sex)
     # If OAnew is not a multiple of 5, round up
