@@ -27,20 +27,20 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   stopifnot(nids == 1 & maxage >= 50)
   
   locid <- dd_census_extract$LocID[1]
-  census_year <- as.numeric(dd_census_extract$ReferencePeriod[1])
+  census_refpd <- dd_census_extract$ReferencePeriod[1]
   census_reference_date <- as.numeric(dd_census_extract$TimeMid[1])
   
   # load some preliminaries
   
   # load census enumeration model results
-  load(paste0(pes_directory,"TotNetEnum.RData"))
-  load(paste0(pes_directory,"DiffNCE1.RData"))
-  load(paste0(pes_directory,"DiffNCEAbr.RData"))
-  load(paste0(pes_directory,"Covariates.RData"))
+  if (!exists("TotNetEnum")) {load(paste0(pes_directory,"TotNetEnum.RData"))}  
+  if (!exists("DiffNCE1")) {load(paste0(pes_directory,"DiffNCE1.RData"))}
+  if (!exists("DiffNCEAbr")) {load(paste0(pes_directory,"DiffNCEAbr.RData"))}
+  if (!exists("Covariates")) {load(paste0(pes_directory,"Covariates.RData"))}
   
   # parse years of education by sex to use as criterion for selecting levels of smoothing
-  EduYrs_m <-  dplyr::filter(Covariates,LocID==locid, Year==census_year)$EducYrsM
-  EduYrs_f <-  dplyr::filter(Covariates,LocID==locid, Year==census_year)$EducYrsF
+  EduYrs_m <-  dplyr::filter(Covariates,LocID==locid, Year==max(floor(census_reference_date), 1950))$EducYrsM
+  EduYrs_f <-  dplyr::filter(Covariates,LocID==locid, Year==max(floor(census_reference_date), 1950))$EducYrsF
 
   # 2. Parse the census population counts by single year of age
   pop1 <- dd_census_extract %>% dplyr::filter(complete == TRUE) %>% 
@@ -80,10 +80,10 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     rm(OpenAge5)
     
     # 3.c. Parse net census enumeration model results for the given locid and census year
-    NCE_total <- dplyr::filter(TotNetEnum, LocID == locid, Year == census_year)$NetEnum
-    NCE_m     <- dplyr::filter(DiffNCE1, LocID == locid, Year == census_year)$NetEnum_M_Diff
-    NCE_f     <- dplyr::filter(DiffNCE1, LocID == locid, Year == census_year)$NetEnum_F_Diff
-    NCE_age   <- dplyr::filter(DiffNCE1, LocID == locid, Year == census_year)$Age
+    NCE_total <- dplyr::filter(TotNetEnum, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum
+    NCE_m     <- dplyr::filter(DiffNCE1, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_M_Diff
+    NCE_f     <- dplyr::filter(DiffNCE1, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_F_Diff
+    NCE_age   <- dplyr::filter(DiffNCE1, LocID == locid, Year == max(floor(census_reference_date), 1950))$Age
     
       # truncate sex-age specific nce diff to the ages of the available population data
       NCE_m   <- c(NCE_m[NCE_age < maxage], mean(NCE_m[NCE_age >= maxage]))
@@ -178,10 +178,10 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       }
       
       # 5.b. Parse net census enumeration model results for the given locid and census year
-      NCE_total <- dplyr::filter(TotNetEnum, LocID == locid, Year == census_year)$NetEnum
-      NCE_m     <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == census_year)$NetEnum_M_Diff
-      NCE_f     <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == census_year)$NetEnum_F_Diff
-      NCE_age   <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == census_year)$Age
+      NCE_total <- dplyr::filter(TotNetEnum, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum
+      NCE_m     <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_M_Diff
+      NCE_f     <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_F_Diff
+      NCE_age   <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == max(floor(census_reference_date), 1950))$Age
       
         # truncate sex-age specific nce diff to the ages of the available population data
         NCE_m   <- c(NCE_m[NCE_age < maxage], mean(NCE_m[NCE_age >= maxage]))
@@ -245,7 +245,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   BP_out <- BP_single(LocID = locid, 
                       SummaryTbl = pop_smoothed_out$Summary,
                       Pop1Compare = pop_smoothed_out$PopCompare,
-                      RefDate = census_reference_date,
+                      RefDate = min(floor(census_reference_date), 2019), # to deal with truncated wpp19 LT availability 
                       nLxFemale = nLxFemale,
                       nLxMale   = nLxMale,
                       nLxDatesIn = nLxDatesIn,
@@ -266,7 +266,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     OPAG_m <- OPAG_wrapper(Pop = BP_out$BestSmthAdjBP$BestSmthAdjBP[BP_out$BestSmthAdjBP$SexID == 1],
                            Age = BP_out$BestSmthAdjBP$AgeStart[BP_out$BestSmthAdjBP$SexID == 1],
                            LocID = locid, 
-                           Year = census_year, 
+                           Year = min(floor(census_reference_date), 2019), 
                            sex = "male", 
                            nLx = nLxMale,
                            Age_nLx = Age_nLx,
@@ -277,7 +277,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     OPAG_f <- OPAG_wrapper(Pop = BP_out$BestSmthAdjBP$BestSmthAdjBP[BP_out$BestSmthAdjBP$SexID == 2],
                            Age = BP_out$BestSmthAdjBP$AgeStart[BP_out$BestSmthAdjBP$SexID == 2],
                            LocID = locid, 
-                           Year = census_year, 
+                           Year = min(floor(census_reference_date), 2019), 
                            sex = "female", 
                            nLx = nLxFemale,
                            Age_nLx = Age_nLx,
@@ -303,13 +303,13 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   
   # append some identifying information to the output census series to make it easier to transform to matrix later on
   census_pop_out$LocID <- locid  
-  census_pop_out$census_year <- census_year
+  census_pop_out$census_reference_period <- census_refpd
   census_pop_out$census_reference_date <- census_reference_date
   
   # compile all of the outputs
   census_adjust_smooth_extend_out <- list(LocID = locid,
                                           LocName = dd_census_extract$LocName[1],
-                                          census_year = census_year,
+                                          census_reference_period = census_refpd,
                                           census_reference_date = census_reference_date,
                                           census_data_source = dd_census_extract$id[1],
                                           census_pop_in = census_pop_in,
