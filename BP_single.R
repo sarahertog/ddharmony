@@ -51,7 +51,7 @@ BP_single <- function(SummaryTbl,
       ObsPop5F <- single2abridged(ObsPopF)
       ObsPop5M <- single2abridged(ObsPopM)
 
-      BPobs5List <- DemoTools::basepop_five(country = LocID,
+      BPobs5List <- DemoTools::basepop_five(location = LocID,
                                             refDate = RefDate,
                                             Females_five = ObsPop5F,
                                             Males_five = ObsPop5M, 
@@ -77,7 +77,7 @@ BP_single <- function(SummaryTbl,
       BestPop5F <- single2abridged(BestPopF)
       BestPop5M <- single2abridged(BestPopM)
 
-      BPBestList <- DemoTools::basepop_five(country = LocID,
+      BPBestList <- DemoTools::basepop_five(location = LocID,
                                             refDate = RefDate,
                                             Females_five = BestPop5F,
                                             Males_five = BestPop5M, 
