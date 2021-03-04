@@ -7,11 +7,11 @@
 dd_series_isfull <- function(data, abridged = TRUE){
   require(tidyverse)
   
-  oag <- data %>% dd_oag_agestart
-  
   if (abridged) {
+    oag <- dd_oag_agestart(data = data, multiple5 = TRUE)
     ages_closed <- c(0,seq(5,max(5,oag-5),5)) 
   } else {
+    oag <- dd_oag_agestart(data = data, multiple5 = FALSE)
     ages_closed <- seq(0, max(1,oag-1), 1)
   }
   

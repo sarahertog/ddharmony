@@ -223,6 +223,17 @@ DDharmonize_validate_PopCounts <- function(locid,
     
     abridged <- substr(pop_one_series$series[1],1,1) == "a"
     
+    if (abridged) {
+      minrows <- 11
+    } else {
+      minrows <- 51
+    }
+    
+    nrows <- min(nrow(pop_one_series %>% 
+                        dplyr::filter(SexID == 1)),
+                 nrow(pop_one_series %>% 
+                        dplyr::filter(SexID == 2)))
+    
     check_full_m <- dd_series_isfull(pop_one_series %>% 
                                        dplyr::filter(SexID == 1),
                                      abridged = abridged)
@@ -236,10 +247,13 @@ DDharmonize_validate_PopCounts <- function(locid,
     
     n_full <- length(check_full[check_full == TRUE])
     
+    max_oag <- max(pop_one_series$AgeStart)
+    
     # if at least two are full, then identify the series as full
-    if (n_full >=2 ) {
+    if (n_full >=2  & max_oag >= 50 & nrows > minrows) {
       id_series_full <- c(id_series_full, id_sers[i])
     }
+    rm(nrows, minrows, n_full, max_oag, check_full_m, check_full_f, check_full_b)
   }
   
   pop_std_full <- pop_std_all %>% 

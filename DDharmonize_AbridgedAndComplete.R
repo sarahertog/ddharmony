@@ -78,11 +78,11 @@ DDharmonize_AbridgedAndComplete <- function (data_abr,
   for (sex in unique(c(data_abr$SexID, data_cpl$SexID))) {
   
   # create some flags for data availability
-  has_abr          <- nrow(data_abr[!is.na(data_abr$DataValue),]) >0
+  has_abr          <- nrow(data_abr[!is.na(data_abr$DataValue) & data_abr$SexID == sex,]) >0
     has_abr <- ifelse(is_empty(has_abr), FALSE, has_abr)
-  has_cpl_from_abr <- nrow(data_cpl_from_abr[!is.na(data_cpl_from_abr$DataValue),]) >0
+  has_cpl_from_abr <- nrow(data_cpl_from_abr[!is.na(data_cpl_from_abr$DataValue) & data_cpl_from_abr$SexID == sex,]) >0
     has_cpl_from_abr <- ifelse(is_empty(has_cpl_from_abr), FALSE, has_cpl_from_abr)
-  has_cpl          <- nrow(data_cpl[!is.na(data_cpl$DataValue),]) >0
+  has_cpl          <- nrow(data_cpl[!is.na(data_cpl$DataValue) & data_cpl$SexID == sex,]) >0
     has_cpl <- ifelse(is_empty(has_cpl), FALSE, has_cpl)
   
   if (has_abr) {  
