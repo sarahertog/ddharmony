@@ -34,8 +34,8 @@ censusPop_adjust_nce <- function(popM,
       pop_f_adj <- pop_f_adj * Adj2factor
       
       
-      out.data <- list(pop_m_adj = pop_m_adj,
-                       pop_f_adj = pop_f_adj)
+      out.data <- list(popM_adjusted = pop_m_adj,
+                       popF_adjusted = pop_f_adj)
       
       return(out.data)
       
