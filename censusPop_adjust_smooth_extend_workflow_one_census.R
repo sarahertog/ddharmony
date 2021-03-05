@@ -201,7 +201,8 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
       popM   <- pop_in$DataValue[pop_in$SexID ==1]
       popF   <- pop_in$DataValue[pop_in$SexID ==2]
-      Age5    <- pop_in$AgeStart[pop_in$SexID ==2]
+      Age5   <- pop_in$AgeStart[pop_in$SexID ==2]
+      nAge   <- length(Age5)
 
       # 8.a. collapse open age over 100 to 100+  
       if (maxage > 100) {
@@ -209,6 +210,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         popF   <- c(popF[Age5 < 100], sum(popF[Age5 >= 100]))
         Age5    <- c(Age5[Age5<100], 100) 
         maxage <- 100
+        nAge   <- length(Age5)
       }
       
       # 8.b. If we are adjusting for enumeration, do that now
@@ -242,7 +244,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       popF <- pop_adjusted[[2]]
       
       pop_adjusted <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
-                                 AgeStart = rep(Age,2),
+                                 AgeStart = rep(Age5,2),
                                  DataValue = c(popM, popF))
       
       } else { # if not adjusting for enumeration, set these objects as null and continue working on the basis of the original input
@@ -279,6 +281,9 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         popM <- popM_smoothed
         popF <- popF_smoothed
         
+        Age <- 0:maxage
+        nAge <- length(Age)
+        
         pop_smoothed <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
                                    AgeStart = rep(Age,2),
                                    DataValue = c(popM, popF))
@@ -298,6 +303,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     if (adjust_basepop) {
       
       Age <- 0:maxage
+      nAge <- length(Age)
       
       # group to abridged age groups
       popM_abr <- DemoTools::single2abridged(popM)
