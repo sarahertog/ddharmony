@@ -197,7 +197,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
       pop_in <- pop5 %>% 
         dplyr::filter(AgeLabel != "Total" & SexID %in% c(1,2)) %>% 
-        select(SexID, AgeStart, DataValue)
+        select(SexID, AgeStart, DataValue, id)
       
       popM   <- pop_in$DataValue[pop_in$SexID ==1]
       popF   <- pop_in$DataValue[pop_in$SexID ==2]
@@ -334,8 +334,8 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       minLastBPage1 <- max(0, min(Age[!BP1_higher]) - 1)
 
       # splice the BP1 series for ages at or below minLastBPage1 with unsmoothed single age series
-      popM_BP2 <- c(popM_BP1[Age <= minLastBPage1], popM_unsmoothed[Age > minLastBPage1]) 
-      popF_BP2 <- c(popF_BP1[Age <= minLastBPage1], popF_unsmoothed[Age > minLastBPage1]) 
+      popM_BP2 <- c(popM_BP1[Age <= minLastBPage1], popM_unsmoothed[Age > minLastBPage1 & Age < 15], popM[Age >= 15]) 
+      popF_BP2 <- c(popF_BP1[Age <= minLastBPage1], popF_unsmoothed[Age > minLastBPage1 & Age < 15], popF[Age >= 15]) 
       
       # if we are smoothing, then smooth BP2 using the best method from child smoothing before
       if (adjust_smooth) {
@@ -379,27 +379,22 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       minLastBPage3 <- max(0, min(Age[!BP3_higher]) - 1)
       
       # splice the BP1 up to age minLastBPage3 with the BP3
-      popM_BP4 <- c(popM_BP1[Age <= minLastBPage3], popM_BP3[Age > minLastBPage3])
-      popF_BP4 <- c(popF_BP1[Age <= minLastBPage3], popF_BP3[Age > minLastBPage3])
+      popM_BP4 <- c(popM_BP1[Age <= minLastBPage3], popM_BP3[Age > minLastBPage3 & Age < 15], popM[Age >= 15])
+      popF_BP4 <- c(popF_BP1[Age <= minLastBPage3], popF_BP3[Age > minLastBPage3 & Age < 15], popF[Age >= 15])
       
-      popM_BPout <- c(popM_BP4[1:10], popM[11:length(popM)])
-      popF_BPout <- c(popF_BP4[1:10], popF[11:length(popF)])
-      
-      pop_basepop <- data.frame(SexID = rep(c(rep(1,nAge),rep(2,nAge)),5),
-                                AgeStart = rep(Age,10),
+      pop_basepop <- data.frame(SexID = rep(c(rep(1,nAge),rep(2,nAge)),4),
+                                AgeStart = rep(Age,8),
                                 BPLabel = c(rep("BP1",nAge*2),
                                            rep("BP2",nAge*2),
                                            rep("BP3",nAge*2),
-                                           rep("BP4",nAge*2),
-                                           rep("BP5",nAge*2)),
+                                           rep("BP4",nAge*2)),
                                 DataValue = c(popM_BP1, popF_BP1,
-                                             popM_BP2, popF_BP2,
-                                             popM_BP3, popF_BP3,
-                                             popM_BP4, popF_BP4,
-                                             popM_BPout, popF_BPout))
+                                              popM_BP2, popF_BP2,
+                                              popM_BP3, popF_BP3,
+                                              popM_BP4, popF_BP4))
 
-      popM <- popM_BPout
-      popF <- popF_BPout
+      popM <- popM_BP4
+      popF <- popF_BP4
       
     } else { # if we are not doing basepop adjustment
       
