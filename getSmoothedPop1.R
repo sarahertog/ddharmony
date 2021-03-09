@@ -57,7 +57,7 @@ getSmoothedPop1 <- function(popM,
     
     # Parse the best single age data
     popM_smooth <- unlist(select(popM_smooth_mav$MavPopDF, !!paste0("Pop", bestMavN)))
-    popF_smooth <- unlist(select(popM_smooth_mav$MavPopDF, !!paste0("Pop", bestMavN)))
+    popF_smooth <- unlist(select(popF_smooth_mav$MavPopDF, !!paste0("Pop", bestMavN)))
   
     best_smooth_method <- paste("bestMavN = ", bestMavN)
     
