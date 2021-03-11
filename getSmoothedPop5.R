@@ -6,6 +6,7 @@
 getSmoothedPop5 <- function(popM, 
                             popF,
                             Age,
+                            age_ratio_age = NULL,
                             EduYrs,
                             subgroup = c("adult", "child")) {
   
@@ -43,13 +44,17 @@ getSmoothedPop5 <- function(popM,
     popF5_mav4[nAge5 - 2] <- popF5_mav2[nAge5 - 2]
     
     # compute age ratio scores for 5-yr age groups from 5 to 75 for adults or from 0 to 20 for children
-    
-    if (subgroup == "adult") {
-      ageMin <- 5
-      ageMax <- min(75, maxage)
+    if (is.null(age_ratio_age)) {
+      if (subgroup == "adult") {
+        ageMin <- 5
+        ageMax <- min(75, maxage)
+      } else {
+        ageMin <- 0
+        ageMax <- 20
+      }
     } else {
-      ageMin <- 0
-      ageMax <- 20
+      ageMin = min(age_ratio_age)
+      ageMax = max(age_ratio_age)
     }
     
     # first on the unsmoothed 5-year data

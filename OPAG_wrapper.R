@@ -10,12 +10,13 @@ OPAG_wrapper <- function(Pop,
                          OAnew = OAnew,
                          nLx = NULL,
                          Age_nLx = NULL,
-                         AgeInt_nLx = NULL,
-                         graduate_output = TRUE) {
+                         AgeInt_nLx = NULL) {
   
   maxage   <- max(Age)
   
   stopifnot(maxage >= 50 & OAnew > maxage)
+  
+  single <- DemoTools::is_single(Age)
   
   # group to five-year age groups
   Pop5 <- DemoTools::groupAges(Pop, Age=Age, N=5)
@@ -25,7 +26,6 @@ OPAG_wrapper <- function(Pop,
   if(Pop5[Age5 == maxage] > 5) {
     
     if (is.null(nLx)) {
-    #nLx   <- downloadnLx(NULL, LocID, sex, Year) # WPP19 Lx has oag = 100+
     
     # download life table
     lt_abr <- fertestr::FetchLifeTableWpp2019(locations = LocID, 
@@ -56,7 +56,7 @@ OPAG_wrapper <- function(Pop,
     cv_out <- sd(diff(pop_ext$Pop_out[Age5 %in% c((age_redist-10):(age_redist+5))]))/abs(mean(diff(pop_ext$Pop_out[Age5 %in% c((age_redist-10):(age_redist+5))])))
     
     # iteratively move the Redistribute_from start age back in increments of 5 until the output cv is reasonably smooth
-    while (cv_out > cv_tolerance & age_redist >=65 ) {
+    while (cv_out > cv_tolerance & age_redist >=min_age_redist ) {
       age_redist <- age_redist - 5
       
       pop_ext <- OPAG(Pop = Pop5,
@@ -72,6 +72,10 @@ OPAG_wrapper <- function(Pop,
       
     }
     
+    
+    Agein <- Age
+    Age <- pop_ext$Age_out
+    
     pop_ext <- pop_ext$Pop_out
     
   } else { # if pop in maxage group is less than 5, then extend to OAnew5 with zeros
@@ -83,16 +87,22 @@ OPAG_wrapper <- function(Pop,
     cv_out <- NA
     pop_ext <- c(Pop5, rep(0, (OAnew5 - maxage) / 5))
     
+    Agein <- Age
+    Age <- seq(0,OAnew5,5)
+    
+    
   }
+
   
-  Agein <- Age
-  if (graduate_output) {
+  if (single) { # if input is single, then graduate output
+    
   # Now graduate to single year of age
   pop_ext <- DemoTools::graduate_mono(pop_ext, AgeInt = rep(5,(OAnew5 + 5)/5), Age= seq(0,OAnew5,5), OAG = TRUE)
   Age     <- 0:OAnew5
   # truncate back to the originally requested OAnew
   pop_ext <- DemoTools::groupOAG(Value = pop_ext, Age = Age, OAnew = OAnew)
   Age     <- 0:OAnew
+  
   }
   
   # splice together, using opag extension for only ages above the start of the opag redistribution

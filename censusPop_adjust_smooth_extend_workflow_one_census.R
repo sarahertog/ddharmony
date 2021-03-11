@@ -20,7 +20,10 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                                                                SRB = NULL,
                                                                SRBDatesIn = NULL,
                                                                radix = NULL,
-                                                               OAnew = 101,
+                                                               OAnew = 105,
+                                                               sub_locid_PES = NULL,
+                                                               sub_locid_EduYrs = NULL,
+                                                               sub_locid_DemoTools = NULL,
                                                                adjust_pes = TRUE,
                                                                adjust_smooth = TRUE,
                                                                adjust_basepop = TRUE) {
@@ -33,6 +36,14 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   
   # 2. census descriptors
   locid <- dd_census_extract$LocID[1]
+  
+  # locid used to select PES results
+  locid_PES <- ifelse(is.null(sub_locid_PES), locid, sub_locid_PES)
+  # locid used to select years of education by sex (for most this is the locid, but for Kosovo, for example, we need to sub Serbia)
+  locid_EduYrs <- ifelse(is.null(sub_locid_EduYrs), locid, sub_locid_EduYrs)
+  # locid used to select lifetable values or asfr through DemoTools functions
+  locid_DemoTools <- ifelse(is.null(sub_locid_DemoTools), locid, sub_locid_DemoTools)
+  
   census_refpd <- dd_census_extract$ReferencePeriod[1]
   census_reference_date <- as.numeric(dd_census_extract$TimeMid[1])
   
@@ -42,8 +53,8 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
   if (!exists("Covariates")) {load(paste0(pes_directory,"Covariates.RData"))}
   
   # parse years of education by sex to use as criterion for selecting levels of smoothing
-  EduYrs_m <-  dplyr::filter(Covariates,LocID==locid, Year==max(floor(census_reference_date), 1950))$EducYrsM
-  EduYrs_f <-  dplyr::filter(Covariates,LocID==locid, Year==max(floor(census_reference_date), 1950))$EducYrsF
+  EduYrs_m <-  dplyr::filter(Covariates,LocID==locid_EduYrs, Year==max(floor(census_reference_date), 1950))$EducYrsM
+  EduYrs_f <-  dplyr::filter(Covariates,LocID==locid_EduYrs, Year==max(floor(census_reference_date), 1950))$EducYrsF
   
   # if we will adjust for under/over enumeration, load those model results
   if (adjust_pes) {
@@ -102,10 +113,10 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
     # 6.c. If we are adjusting for enumeration, do that now
     if (adjust_pes) {
       #Parse net census enumeration model results for the given locid and census year
-      NCE_total <- dplyr::filter(TotNetEnum, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum
-      NCE_m     <- dplyr::filter(DiffNCE1, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_M_Diff
-      NCE_f     <- dplyr::filter(DiffNCE1, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_F_Diff
-      NCE_age   <- dplyr::filter(DiffNCE1, LocID == locid, Year == max(floor(census_reference_date), 1950))$Age
+      NCE_total <- dplyr::filter(TotNetEnum, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$NetEnum
+      NCE_m     <- dplyr::filter(DiffNCE1, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$NetEnum_M_Diff
+      NCE_f     <- dplyr::filter(DiffNCE1, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$NetEnum_F_Diff
+      NCE_age   <- dplyr::filter(DiffNCE1, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$Age
     
       # truncate sex-age specific nce diff to the ages of the available population data
       NCE_m   <- c(NCE_m[NCE_age < maxage], mean(NCE_m[NCE_age >= maxage]))
@@ -137,19 +148,80 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       # set the unsmoothed series aside for basepop later
       popM_unsmoothed <- popM
       popF_unsmoothed <- popF
-    
+      
+    # 6. new Extend to ages 105+ using OPAG
+      
+      if (maxage < OAnew) {
+        OPAG_m <- OPAG_wrapper(Pop = popM,
+                               Age = Age,
+                               LocID = locid_DemoTools, 
+                               Year = min(floor(census_reference_date), 2019), 
+                               sex = "male", 
+                               nLx = nLxMale,
+                               Age_nLx = Age_nLx,
+                               AgeInt_nLx = AgeInt_nLx,
+                               cv_tolerance = 0.75,
+                               min_age_redist = min(max(Age), 65),
+                               OAnew = OAnew)
+        
+        OPAG_f <- OPAG_wrapper(Pop = popF,
+                               Age = Age,
+                               LocID = locid_DemoTools, 
+                               Year = min(floor(census_reference_date), 2019), 
+                               sex = "female", 
+                               nLx = nLxFemale,
+                               Age_nLx = Age_nLx,
+                               AgeInt_nLx = AgeInt_nLx,
+                               cv_tolerance = 0.75,
+                               min_age_redist = min(max(Age), 65),
+                               OAnew = OAnew)
+        
+        min_age_redist <- min(OPAG_m$age_redist_start, OPAG_f$age_redist_start)
+        
+        popM <- OPAG_m$pop_ext
+        popF <- OPAG_f$pop_ext
+        Age  <- 0:OAnew
+        nAge <- length(Age)
+        
+        pop_extended <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
+                                   AgeStart = rep(Age,2),
+                                   DataValue = c(popM, popF))
+        
+
+        
+      } else { # if no extension necessary
+        
+        min_age_redist <- maxage
+        
+        popM <- popM
+        popF <- popF
+        
+        pop_extended <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
+                                   AgeStart = rep(Age,2),
+                                   DataValue = c(popM, popF))
+        
+      } 
+
    
     # 6.d. If we are smoothing to address age heaping, do that now
     if (adjust_smooth) {
       
       # first smooth based on bachi or age ratio score for adults
-      pop_smooth_adult <- getSmoothedPop1 (popM, popF, Age, EduYrs = min(EduYrs_m, EduYrs_f), subgroup = "adult") 
+      pop_smooth_adult <- getSmoothedPop1 (popM, popF, Age, 
+                                           bachi_age = 23:(min(77,min_age_redist)),
+                                           age_ratio_age = c(5, min(75, min_age_redist)),
+                                           EduYrs = min(EduYrs_m, EduYrs_f), 
+                                           subgroup = "adult") 
       
       # then smooth based on bachi or age ratio score for children
-      pop_smooth_child <- getSmoothedPop1 (popM, popF, Age, EduYrs = min(EduYrs_m, EduYrs_f), subgroup = "child") 
+      pop_smooth_child <- getSmoothedPop1 (popM, popF, Age, 
+                                           bachi_age = 3:17, 
+                                           age_ratio_age = c(0,20),
+                                           EduYrs = min(EduYrs_m, EduYrs_f), 
+                                           subgroup = "child") 
       
       # blend the smoothed child and adult series, with transition at ages 15-19
-      wts <- c(rep(1,16),0.8, 0.6, 0.4, 0.2, rep(0, maxage-19))
+      wts <- c(rep(1,16),0.8, 0.6, 0.4, 0.2, rep(0, max(Age)-19))
       
       popM_smoothed <- (pop_smooth_child$popM_smooth * wts) + (pop_smooth_adult$popM_smooth * (1-wts))
       popF_smoothed <- (pop_smooth_child$popF_smooth * wts) + (pop_smooth_adult$popF_smooth * (1-wts))
@@ -217,10 +289,10 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       if (adjust_pes) {
         
       # Parse net census enumeration model results for the given locid and census year
-      NCE_total <- dplyr::filter(TotNetEnum, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum
-      NCE_m     <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_M_Diff
-      NCE_f     <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == max(floor(census_reference_date), 1950))$NetEnum_F_Diff
-      NCE_age   <- dplyr::filter(DiffNCEAbr, LocID == locid, Year == max(floor(census_reference_date), 1950))$Age
+      NCE_total <- dplyr::filter(TotNetEnum, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$NetEnum
+      NCE_m     <- dplyr::filter(DiffNCEAbr, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$NetEnum_M_Diff
+      NCE_f     <- dplyr::filter(DiffNCEAbr, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$NetEnum_F_Diff
+      NCE_age   <- dplyr::filter(DiffNCEAbr, LocID == locid_PES, Year == max(floor(census_reference_date), 1950))$Age
       
         # truncate sex-age specific nce diff to the ages of the available population data
         NCE_m   <- c(NCE_m[NCE_age < maxage], mean(NCE_m[NCE_age >= maxage]))
@@ -258,17 +330,77 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       popM_unsmoothed <- DemoTools::graduate_mono(Value = popM, Age = Age5, AgeInt = DemoTools::age2int(Age5), OAG = TRUE)
       popF_unsmoothed <- DemoTools::graduate_mono(Value = popF, Age = Age5, AgeInt = DemoTools::age2int(Age5), OAG = TRUE)
       
+      
+      # 8. NEW extend to 105+
+      if (maxage < OAnew) {
+        OPAG_m <- OPAG_wrapper(Pop = popM,
+                               Age = Age5,
+                               LocID = locid_DemoTools, 
+                               Year = min(floor(census_reference_date), 2019), 
+                               sex = "male", 
+                               nLx = nLxMale,
+                               Age_nLx = Age_nLx,
+                               AgeInt_nLx = AgeInt_nLx,
+                               cv_tolerance = 0.75,
+                               min_age_redist = min(max(Age5), 65),
+                               OAnew = OAnew)
+        
+        OPAG_f <- OPAG_wrapper(Pop = popF,
+                               Age = Age5,
+                               LocID = locid_DemoTools, 
+                               Year = min(floor(census_reference_date), 2019), 
+                               sex = "female", 
+                               nLx = nLxFemale,
+                               Age_nLx = Age_nLx,
+                               AgeInt_nLx = AgeInt_nLx,
+                               cv_tolerance = 0.75,
+                               min_age_redist = min(max(Age5), 65),
+                               OAnew = OAnew)
+        
+        min_age_redist <- min(OPAG_m$age_redist_start, OPAG_f$age_redist_start)
+        
+        popM <- OPAG_m$pop_ext
+        popF <- OPAG_f$pop_ext
+        Age5  <- OPAG_m$Age_ext
+        nAge <- length(Age5)
+        
+        pop_extended <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
+                                   AgeStart = rep(Age5,2),
+                                   DataValue = c(popM, popF))
+        
+        
+        
+      } else { # if no extension necessary
+        
+        min_age_redist <- maxage
+        
+        popM <- popM
+        popF <- popF
+        
+        pop_extended <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
+                                   AgeStart = rep(Age5,2),
+                                   DataValue = c(popM, popF))
+        
+      } 
+      
+      
       # 8.d. If we are smoothing to address age heaping, do that now
       if (adjust_smooth) {
         
         # first smooth based age ratio score for adults
-        pop_smooth_adult <- getSmoothedPop5(popM, popF, Age5, EduYrs = min(EduYrs_m, EduYrs_f), subgroup = "adult") 
+        pop_smooth_adult <- getSmoothedPop5(popM, popF, Age5, 
+                                            age_ratio_age = c(5, min(75, min_age_redist)),
+                                            EduYrs = min(EduYrs_m, EduYrs_f), 
+                                            subgroup = "adult") 
         
         # then smooth based on age ratio score for children
-        pop_smooth_child <- getSmoothedPop5(popM, popF, Age5, EduYrs = min(EduYrs_m, EduYrs_f), subgroup = "child") 
+        pop_smooth_child <- getSmoothedPop5(popM, popF, Age5, 
+                                            age_ratio_age = c(0, 20),
+                                            EduYrs = min(EduYrs_m, EduYrs_f), 
+                                            subgroup = "child") 
         
         # blend the smoothed child and adult series, with transition at ages 15-19
-        wts <- c(rep(1,16),0.8, 0.6, 0.4, 0.2, rep(0, maxage-19))
+        wts <- c(rep(1,16),0.8, 0.6, 0.4, 0.2, rep(0, max(Age5)-19))
         
         popM_smoothed <- (pop_smooth_child$popM_smooth * wts) + (pop_smooth_adult$popM_smooth * (1-wts))
         popF_smoothed <- (pop_smooth_child$popF_smooth * wts) + (pop_smooth_adult$popF_smooth * (1-wts))
@@ -281,7 +413,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         popM <- popM_smoothed
         popF <- popF_smoothed
         
-        Age <- 0:maxage
+        Age <- (1:length(popM))-1
         nAge <- length(Age)
         
         pop_smoothed <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
@@ -291,8 +423,11 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       } else { # done for smoothing
         
         pop_smoothed <- NULL
-        popM <- popM
-        popF <- popF
+        # graduate the extended series
+        popM <- DemoTools::graduate_mono(popM, Age = Age5, AgeInt = DemoTools::age2int(Age5))
+        popF <- DemoTools::graduate_mono(popF, Age = Age5, AgeInt = DemoTools::age2int(Age5))
+        Age  <- 0:max(Age5)
+        nAge <- length(Age)
       }
       
     } # end for five-year data
@@ -301,17 +436,14 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         
   # 9. basepop adjustment for missing children
     if (adjust_basepop) {
-      
-      Age <- 0:maxage
-      nAge <- length(Age)
-      
+
       # group to abridged age groups
       popM_abr <- DemoTools::single2abridged(popM)
       popF_abr <- DemoTools::single2abridged(popF)
-      Age_abr  <- c(0, 1, seq(5,maxage,5))
+      Age_abr  <- as.numeric(row.names(popM_abr))
       
       # run basepop_five()
-      BP1 <- DemoTools::basepop_five(location = locid,
+      BP1 <- DemoTools::basepop_five(location = locid_DemoTools,
                                             refDate = census_reference_date,
                                             Females_five = popF_abr,
                                             Males_five = popM_abr, 
@@ -331,9 +463,9 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
       # what is the minimum age at which BP1 is higher than input population for both males and females
       BP1_higher <- popM_BP1 > popM & popF_BP1 > popF
-      minLastBPage1 <- max(0, min(Age[!BP1_higher]) - 1)
+      minLastBPage1 <- min(Age[!BP1_higher]) - 1
 
-      # splice the BP1 series for ages at or below minLastBPage1 with unsmoothed single age series
+      # splice the BP1 series for ages at or below minLastBPage1 with unsmoothed single age series to age 15 and smoothed series thereafter
       popM_BP2 <- c(popM_BP1[Age <= minLastBPage1], popM_unsmoothed[Age > minLastBPage1 & Age < 15], popM[Age >= 15]) 
       popF_BP2 <- c(popF_BP1[Age <= minLastBPage1], popF_unsmoothed[Age > minLastBPage1 & Age < 15], popF[Age >= 15]) 
       
@@ -351,7 +483,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
           
           popM5_BP2 <- DemoTools::groupAges(popM_BP2, N=5)
           popF5_BP2 <- DemoTools::groupAges(popF_BP2, N=5)
-          Age5      <- seq(0,maxage,5)
+          Age5      <- seq(0,max(Age_abr),5)
           
           bestGrad5 <- as.numeric(substr(adj_method, nchar(adj_method), nchar(adj_method)))
           
@@ -367,6 +499,8 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
           }
           
         }
+        popM_BP3 <- c(popM_BP3[Age < 15], popM[Age >=15])
+        popF_BP3 <- c(popF_BP3[Age < 15], popF[Age >=15])
         
       } else { # if no smoothing then BP3 = BP2
         popM_BP3 <- popM_BP2
@@ -374,10 +508,15 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         
       }
       
-      # what is the minimum age at which BP3 is higher than BP1 for both males and females
-      BP3_higher <- popM_BP3 > popM_BP1 & popF_BP3 > popF_BP1
-      minLastBPage3 <- max(0, min(Age[!BP3_higher]) - 1)
-      
+      # what is the minimum age at which BP3 is higher than BP1 for both males and females (and for which BP1 > smoothed pop)
+      BP3_higher <- popM_BP1 > popM & popM_BP3 > popM_BP1 & popF_BP1 > popF & popF_BP3 > popF_BP1
+      if (any(BP3_higher)) {
+      minLastBPage3 <- min(Age[BP3_higher]) - 1
+      } else {
+        minLastBPage3 <- -1
+      }
+      if (minLastBPage3 >=15) { minLastBPage3 <- -1}
+
       # splice the BP1 up to age minLastBPage3 with the BP3
       popM_BP4 <- c(popM_BP1[Age <= minLastBPage3], popM_BP3[Age > minLastBPage3 & Age < 15], popM[Age >= 15])
       popF_BP4 <- c(popF_BP1[Age <= minLastBPage3], popF_BP3[Age > minLastBPage3 & Age < 15], popF[Age >= 15])
@@ -405,44 +544,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
     }
         
-        
-  # 10. Extend to open age group OAnew (as needed), using OPAG
-  
-  if (maxage < OAnew) {
-    OPAG_m <- OPAG_wrapper(Pop = popM,
-                           Age = Age,
-                           LocID = locid, 
-                           Year = min(floor(census_reference_date), 2019), 
-                           sex = "male", 
-                           nLx = nLxMale,
-                           Age_nLx = Age_nLx,
-                           AgeInt_nLx = AgeInt_nLx,
-                           cv_tolerance = 0.75,
-                           OAnew = OAnew)
-    
-    OPAG_f <- OPAG_wrapper(Pop = popF,
-                           Age = Age,
-                           LocID = locid, 
-                           Year = min(floor(census_reference_date), 2019), 
-                           sex = "female", 
-                           nLx = nLxFemale,
-                           Age_nLx = Age_nLx,
-                           AgeInt_nLx = AgeInt_nLx,
-                           cv_tolerance = 0.75,
-                           OAnew = OAnew)
-    
-    pop_extended <- data.frame(SexID = c(rep(1,OAnew+1),rep(2,OAnew+1)),
-                               AgeStart = rep(0:OAnew,2),
-                               DataValue = c(OPAG_m$pop_ext, OPAG_f$pop_ext))
-    
-  } else { # if no extension necessary
-    
-    pop_extended <- data.frame(SexID = c(rep(1,OAnew+1),rep(2,OAnew+1)),
-                               AgeStart = rep(0:OAnew,2),
-                               DataValue = c(popM, popF))
-    
-  } 
-
+ 
   # compile all of the outputs
   census_adjust_smooth_extend_out <- list(LocID = locid,
                                           LocName = dd_census_extract$LocName[1],
@@ -451,9 +553,9 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                                           census_data_source = dd_census_extract$id[1],
                                           census_pop_in = pop_in,
                                           pop_adjusted = pop_adjusted,
+                                          pop_extended = pop_extended,
                                           pop_smoothed = pop_smoothed,
-                                          pop_basepop = pop_basepop,
-                                          pop_extended = pop_extended) 
+                                          pop_basepop = pop_basepop) 
   
   return(census_adjust_smooth_extend_out)  
   
