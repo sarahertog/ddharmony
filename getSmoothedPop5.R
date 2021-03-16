@@ -43,14 +43,14 @@ getSmoothedPop5 <- function(popM,
     popF5_mav4[2] <- popF5_mav2[2]
     popF5_mav4[nAge5 - 2] <- popF5_mav2[nAge5 - 2]
     
-    # compute age ratio scores for 5-yr age groups from 5 to 75 for adults or from 0 to 20 for children
+    # compute age ratio scores for 5-yr age groups from 15-19 to 70-74 for adults or from 0 to 10-14 for children
     if (is.null(age_ratio_age)) {
       if (subgroup == "adult") {
-        ageMin <- 5
-        ageMax <- min(75, maxage)
+        ageMin <- 15
+        ageMax <- min(70, maxage)
       } else {
         ageMin <- 0
-        ageMax <- 20
+        ageMax <- 10
       }
     } else {
       ageMin = min(age_ratio_age)
@@ -59,14 +59,14 @@ getSmoothedPop5 <- function(popM,
     
     # first on the unsmoothed 5-year data
     ageRatioScoreM_orig <- DemoTools::ageRatioScore(Value = popM5, Age = Age5,
-                                                    ageMin = ageMin, ageMax = ageMax)
+                                                    ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     ageRatioScoreF_orig <- DemoTools::ageRatioScore(Value = popF5, Age = Age5,
-                                                    ageMin = ageMin, ageMax = ageMax)
+                                                    ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     # then on the mav2 smoothed 5-year data
     ageRatioScoreM_mav2 <- DemoTools::ageRatioScore(Value = popM5_mav2, Age = Age5,
-                                                    ageMin = ageMin, ageMax = ageMax)
+                                                    ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     ageRatioScoreF_mav2 <- DemoTools::ageRatioScore(Value = popF5_mav2, Age = Age5,
-                                                    ageMin = ageMin, ageMax = ageMax)
+                                                    ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     
     # now identify the best smoothing approach based on age ratio scores and education
     bestGrad5 <- getBestGrad5(AgeRatioScore_orig = max(ageRatioScoreM_orig, ageRatioScoreF_orig), 
