@@ -463,7 +463,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
       # what is the minimum age at which BP1 is higher than input population for both males and females
       BP1_higher <- popM_BP1 > popM & popF_BP1 > popF
-      minLastBPage1 <- min(Age[!BP1_higher]) - 1
+      minLastBPage1 <- min(Age[!BP1_higher],10) - 1
 
       # splice the BP1 series for ages at or below minLastBPage1 with unsmoothed single age series to age 15 and smoothed series thereafter
       popM_BP2 <- c(popM_BP1[Age <= minLastBPage1], popM_unsmoothed[Age > minLastBPage1 & Age < 15], popM[Age >= 15]) 
@@ -508,15 +508,10 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         
       }
       
-      # what is the minimum age at which BP3 is higher than BP1 for both males and females (and for which BP1 > smoothed pop)
-      BP3_higher <- popM_BP1 > popM & popM_BP3 > popM_BP1 & popF_BP1 > popF & popF_BP3 > popF_BP1
-      if (any(BP3_higher)) {
-      minLastBPage3 <- min(Age[BP3_higher]) - 1
-      } else {
-        minLastBPage3 <- -1
-      }
-      if (minLastBPage3 >=15) { minLastBPage3 <- -1}
-
+      # what is the minimum age at which BP1 is higher than BP3 for both males and females
+      BP1_higher <- popM_BP1 >= popM_BP3 & popF_BP1 >= popF_BP3 
+      minLastBPage3 <- min(Age[!BP1_higher],10) - 1
+      
       # splice the BP1 up to age minLastBPage3 with the BP3
       popM_BP4 <- c(popM_BP1[Age <= minLastBPage3], popM_BP3[Age > minLastBPage3 & Age < 15], popM[Age >= 15])
       popF_BP4 <- c(popF_BP1[Age <= minLastBPage3], popF_BP3[Age > minLastBPage3 & Age < 15], popF[Age >= 15])
