@@ -211,14 +211,14 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       # first smooth based on bachi or age ratio score for adults
       pop_smooth_adult <- getSmoothedPop1 (popM, popF, Age, 
                                            bachi_age = 23:(min(77,min_age_redist)),
-                                           age_ratio_age = c(5, min(75, min_age_redist)),
+                                           age_ratio_age = c(15, min(70, min_age_redist)),
                                            EduYrs = min(EduYrs_m, EduYrs_f), 
                                            subgroup = "adult") 
       
       # then smooth based on bachi or age ratio score for children
       pop_smooth_child <- getSmoothedPop1 (popM, popF, Age, 
                                            bachi_age = 3:17, 
-                                           age_ratio_age = c(0,20),
+                                           age_ratio_age = c(0,10),
                                            EduYrs = min(EduYrs_m, EduYrs_f), 
                                            subgroup = "child") 
       
