@@ -409,13 +409,13 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
         
         # first smooth based age ratio score for adults
         pop_smooth_adult <- getSmoothedPop5(popM, popF, Age5, 
-                                            age_ratio_age = c(5, min(75, min_age_redist)),
+                                            age_ratio_age = c(15, min(70, min_age_redist)),
                                             EduYrs = min(EduYrs_m, EduYrs_f), 
                                             subgroup = "adult") 
         
         # then smooth based on age ratio score for children
         pop_smooth_child <- getSmoothedPop5(popM, popF, Age5, 
-                                            age_ratio_age = c(0, 20),
+                                            age_ratio_age = c(0, 10),
                                             EduYrs = min(EduYrs_m, EduYrs_f), 
                                             subgroup = "child") 
         
