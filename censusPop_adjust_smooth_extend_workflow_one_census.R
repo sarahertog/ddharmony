@@ -141,13 +141,15 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
 
     } else { # if not adjusting for enumeration, set these objects as null and continue working on the basis of the original input
       pop_adjusted <- NULL
+      NCE_total <- NA
       
       popM <- popM
       popF <- popF
     }
-      # set the unsmoothed series aside for basepop later
-      popM_unsmoothed <- popM
-      popF_unsmoothed <- popF
+    # set the unsmoothed series aside for basepop later
+      # if PES adjustment was used, then this is the adjusted series.  If not, it is the original series
+    popM_unsmoothed <- popM
+    popF_unsmoothed <- popF
       
     # 6. new Extend to ages 105+ using OPAG
       
@@ -238,9 +240,26 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                                  AgeStart = rep(Age,2),
                                  DataValue = c(popM, popF))
       
+      bachi_adult <- pop_smooth_adult$bachi
+      bachi_child <- pop_smooth_child$bachi
+      ageRatio_adult_orig <- pop_smooth_adult$AgeRatioScore_orig
+      ageRatio_child_orig <- pop_smooth_child$AgeRatioScore_orig
+      ageRatio_adult_mav2 <- pop_smooth_adult$AgeRatioScore_mav2
+      ageRatio_child_mav2 <- pop_smooth_child$AgeRatioScore_mav2
+      best_smooth_adult <- pop_smooth_adult$best_smooth_method
+      best_smooth_child <- pop_smooth_child$best_smooth_method
+      
     } else { # done for smoothing
       
       pop_smoothed <- NULL
+      bachi_adult <- NA
+      bachi_child <- NA
+      ageRatio_adult_orig <- NA
+      ageRatio_child_orig <- NA
+      ageRatio_adult_mav2 <- NA
+      ageRatio_child_mav2 <- NA
+      best_smooth_adult <- NA
+      best_smooth_child <- NA
       
       popM <- popM
       popF <- popF
@@ -321,6 +340,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
       } else { # if not adjusting for enumeration, set these objects as null and continue working on the basis of the original input
         pop_adjusted <- NULL
+        NCE_total <- NA
         
         popM <- popM
         popF <- popF
@@ -420,9 +440,27 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                                    AgeStart = rep(Age,2),
                                    DataValue = c(popM, popF))
         
+        bachi_adult <- NA # no bachi for 5-year data
+        bachi_child <- NA
+        ageRatio_adult_orig <- pop_smooth_adult$AgeRatioScore_orig
+        ageRatio_child_orig <- pop_smooth_child$AgeRatioScore_orig
+        ageRatio_adult_mav2 <- pop_smooth_adult$AgeRatioScore_mav2
+        ageRatio_child_mav2 <- pop_smooth_child$AgeRatioScore_mav2
+        best_smooth_adult <- pop_smooth_adult$best_smooth_method
+        best_smooth_child <- pop_smooth_child$best_smooth_method
+        
       } else { # done for smoothing
         
         pop_smoothed <- NULL
+        bachi_adult <- NA
+        bachi_child <- NA
+        ageRatio_adult_orig <- NA
+        ageRatio_child_orig <- NA
+        ageRatio_adult_mav2 <- NA
+        ageRatio_child_mav2 <- NA
+        best_smooth_adult <- NA
+        best_smooth_child <- NA
+        
         # graduate the extended series
         popM <- DemoTools::graduate_mono(popM, Age = Age5, AgeInt = DemoTools::age2int(Age5))
         popF <- DemoTools::graduate_mono(popF, Age = Age5, AgeInt = DemoTools::age2int(Age5))
@@ -539,18 +577,35 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
       
     }
         
- 
+  # create a data frame with the final output data
+  Age <- 0:OAnew
+  nAge <- length(Age)
+  census_pop_out <- data.frame(SexID = c(rep(1,nAge),rep(2,nAge)),
+                               AgeStart = rep(Age,2),
+                               DataValue = c(popM, popF))
+  
   # compile all of the outputs
   census_adjust_smooth_extend_out <- list(LocID = locid,
                                           LocName = dd_census_extract$LocName[1],
                                           census_reference_period = census_refpd,
                                           census_reference_date = census_reference_date,
                                           census_data_source = dd_census_extract$id[1],
+                                          pes_adjustment = NCE_total,
+                                          best_smooth_adult = best_smooth_adult,
+                                          best_smooth_child = best_smooth_child,
+                                          bachi_adult = bachi_adult,
+                                          bachi_child = bachi_child,
+                                          ageRatio_adult_orig = ageRatio_adult_orig,
+                                          ageRatio_child_orig = ageRatio_child_orig,
+                                          ageRatio_adult_mav2 = ageRatio_adult_mav2,
+                                          ageRatio_child_mav2 = ageRatio_child_mav2,
+                                          EduYrs = min(EduYrs_m, EduYrs_f),
                                           census_pop_in = pop_in,
                                           pop_adjusted = pop_adjusted,
                                           pop_extended = pop_extended,
                                           pop_smoothed = pop_smoothed,
-                                          pop_basepop = pop_basepop) 
+                                          pop_basepop = pop_basepop,
+                                          census_pop_out = census_pop_out) 
   
   return(census_adjust_smooth_extend_out)  
   
