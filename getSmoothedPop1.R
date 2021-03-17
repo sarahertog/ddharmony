@@ -69,6 +69,9 @@ getSmoothedPop1 <- function(popM,
   
     best_smooth_method <- paste("bestMavN = ", bestMavN)
     
+    AgeRatioScore_orig <- NA # We dont need age ratio score if we are using single age data so set this to NULL for output
+    AgeRatioScore_mav2 <- NA
+    
   } else { # if bestMavN is NA then group to five year data
     
     # group single year series to five year age groups
@@ -108,15 +111,18 @@ getSmoothedPop1 <- function(popM,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     ageRatioScoreF_orig <- DemoTools::ageRatioScore(Value = popF5, Age = Age5,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
+    AgeRatioScore_orig = max(ageRatioScoreM_orig, ageRatioScoreF_orig)
+    
     # then on the mav2 smoothed 5-year data
     ageRatioScoreM_mav2 <- DemoTools::ageRatioScore(Value = popM5_mav2, Age = Age5,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     ageRatioScoreF_mav2 <- DemoTools::ageRatioScore(Value = popF5_mav2, Age = Age5,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
+    AgeRatioScore_mav2 = max(ageRatioScoreM_mav2, ageRatioScoreF_mav2)
     
     # now identify the best smoothing approach based on age ratio scores and education
-    bestGrad5 <- getBestGrad5(AgeRatioScore_orig = max(ageRatioScoreM_orig, ageRatioScoreF_orig), 
-                              AgeRatioScore_mav2 = max(ageRatioScoreM_mav2, ageRatioScoreF_mav2), 
+    bestGrad5 <- getBestGrad5(AgeRatioScore_orig = AgeRatioScore_orig, 
+                              AgeRatioScore_mav2 = AgeRatioScore_mav2, 
                               EduYrs = EduYrs,
                               subgroup = subgroup)
     
@@ -140,7 +146,9 @@ getSmoothedPop1 <- function(popM,
   out.data <- list(popM_smooth = popM_smooth,
                    popF_smooth = popF_smooth,
                    best_smooth_method = best_smooth_method,
-                   bachi = max(bachi_m$index, bachi_f$index))
+                   bachi = max(bachi_m$index, bachi_f$index),
+                   AgeRatioScore_orig = AgeRatioScore_orig,
+                   AgeRatioScore_mav2 = AgeRatioScore_mav2)
   
   return(out.data) 
   

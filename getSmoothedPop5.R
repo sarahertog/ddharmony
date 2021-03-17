@@ -62,15 +62,18 @@ getSmoothedPop5 <- function(popM,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     ageRatioScoreF_orig <- DemoTools::ageRatioScore(Value = popF5, Age = Age5,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
+    AgeRatioScore_orig = max(ageRatioScoreM_orig, ageRatioScoreF_orig)
+    
     # then on the mav2 smoothed 5-year data
     ageRatioScoreM_mav2 <- DemoTools::ageRatioScore(Value = popM5_mav2, Age = Age5,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
     ageRatioScoreF_mav2 <- DemoTools::ageRatioScore(Value = popF5_mav2, Age = Age5,
                                                     ageMin = ageMin, ageMax = ageMax, OAG = FALSE)
+    AgeRatioScore_mav2 = max(ageRatioScoreM_mav2, ageRatioScoreF_mav2)
     
     # now identify the best smoothing approach based on age ratio scores and education
-    bestGrad5 <- getBestGrad5(AgeRatioScore_orig = max(ageRatioScoreM_orig, ageRatioScoreF_orig), 
-                              AgeRatioScore_mav2 = max(ageRatioScoreM_mav2, ageRatioScoreF_mav2), 
+    bestGrad5 <- getBestGrad5(AgeRatioScore_orig = AgeRatioScore_orig, 
+                              AgeRatioScore_mav2 = AgeRatioScore_mav2, 
                               EduYrs = EduYrs,
                               subgroup = subgroup)
     
@@ -95,7 +98,9 @@ getSmoothedPop5 <- function(popM,
                    popF_grad = popF_grad,
                    popM_smooth = popM_smooth,
                    popF_smooth = popF_smooth,
-                   best_smooth_method = best_smooth_method)
+                   best_smooth_method = best_smooth_method,
+                   AgeRatioScore_orig = AgeRatioScore_orig,
+                   AgeRatioScore_mav2 = AgeRatioScore_mav2)
   
   return(out.data) 
   
