@@ -590,6 +590,7 @@ censusPop_adjust_smooth_extend_workflow_one_census <- function(dd_census_extract
                                           census_reference_period = census_refpd,
                                           census_reference_date = census_reference_date,
                                           census_data_source = dd_census_extract$id[1],
+                                          DataCatalogID = dd_census_extract$DataCatalogID[1],
                                           pes_adjustment = NCE_total,
                                           best_smooth_adult = best_smooth_adult,
                                           best_smooth_child = best_smooth_child,
