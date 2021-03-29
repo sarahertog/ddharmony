@@ -37,7 +37,9 @@ OPAG_wrapper <- function(Pop,
     
     # recompute life table, extending as necessary
     nLx <- lt_abridged(nMx = lt_abr$mx, Age = lt_abr$x, Sex = substr(sex,1,1), OAnew = OAnew5)$nLx
-    Age_nLx <- c(0,1,seq(5,OAnew5,5))
+    # collapse first two age groups
+    nLx <- c(nLx[1]+nLx[2],nLx[3:length(nLx)])
+    Age_nLx <- seq(0,OAnew5,5)
     AgeInt_nLx <- DemoTools::age2int(Age_nLx, OAvalue = 1)
     }
     
