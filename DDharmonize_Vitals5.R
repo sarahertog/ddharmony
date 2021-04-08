@@ -107,8 +107,10 @@ DDharmonize_Vitals5 <- function (indata, type = c("births","deaths")) {
         oag_check <- paste0(oag_start,"+") %in% abr$AgeLabel
 
       # drop records for open age groups that do not close the series
+      if (!is_empty(oag_start)){
        abr <- abr %>% 
          dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start))
+      }
 
       # check that there are no missing age groups on the abridged series
        if (nrow(abr[abr$AgeStart >= 5,]) > 0) {

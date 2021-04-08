@@ -100,9 +100,11 @@ DDharmonize_Vitals1 <- function (indata) {
         oag_check <- paste0(oag_start,"+") %in% df$AgeLabel
         
         # drop records for open age groups that do not close the series
+        if (!is_empty(oag_start)) {
         df <- df %>% 
           dplyr::filter(!(AgeStart > 0 & AgeSpan == -1 & AgeStart != oag_start)) %>% 
           arrange(AgeStart, AgeSpan)
+        }
         
         # add AgeSort field that identify standard age groups
         df <- dd_age_standard(df, abridged = FALSE) %>% 
