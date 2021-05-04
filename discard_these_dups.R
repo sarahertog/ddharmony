@@ -8,4 +8,5 @@ discard_these_dups <- c("535 - Bonaire, Sint Eustatius and Saba - Census - 1992 
                         "44 - Bahamas - VR - Births - 2003 - Register - CaribbeanStatsCHAP1-POPFAM - Year of occurrence - Direct - Fair",
                         "44 - Bahamas - VR - Births - 2002 - Register - CaribbeanStatsCHAP1-POPFAM - Year of occurrence - Direct - Fair",
                         "44 - Bahamas - VR - Births - 2001 - Register - CaribbeanStatsCHAP1-POPFAM - Year of occurrence - Direct - Fair",
-                        "44 - Bahamas - VR - Births - 1999 - Register - CaribbeanStatsCHAP1-POPFAM - Year of occurrence - Direct - Fair")
+                        "44 - Bahamas - VR - Births - 1999 - Register - CaribbeanStatsCHAP1-POPFAM - Year of occurrence - Direct - Fair",
+                        "562 - Niger - Census - 2001 - NER_2001_Census_Data.zip (Tableau n° MOR 01: Répartition des décès survenus au cours des 12 derniers mois, par groupe d'âges selon le sexe)\r° - De-facto - Household deaths - Fair")
