@@ -83,7 +83,7 @@ census_workflow_extend_to_105 <- function(popM,
                             Redistribute_from = redist_ages[k],
                             OAnew = OAnew5)
       
-      cvM[[k]] <- sd(diff(pop_extM[[k]]$Pop_out[Age5 %in% c((redist_ages[k]-10):(redist_ages[k]+5))]))/abs(mean(diff(pop_extM[[k]]$Pop_out[Age5 %in% c((redist_ages[k]-10):(redist_ages[k]+5))])))
+      cvM[[k]] <- sd(diff(pop_extM[[k]]$Pop_out[seq(0,OAnew5,5) %in% c((redist_ages[k]-10):(redist_ages[k]+5))]))/abs(mean(diff(pop_extM[[k]]$Pop_out[seq(0,OAnew5,5) %in% c((redist_ages[k]-10):(redist_ages[k]+5))])))
       
       pop_extF[[k]] <- OPAG(Pop = popF5,
                             Age_Pop = Age5,
@@ -94,7 +94,7 @@ census_workflow_extend_to_105 <- function(popM,
                             Redistribute_from = redist_ages[k],
                             OAnew = OAnew5)
       
-      cvF[[k]] <- sd(diff(pop_extF[[k]]$Pop_out[Age5 %in% c((redist_ages[k]-10):(redist_ages[k]+5))]))/abs(mean(diff(pop_extF[[k]]$Pop_out[Age5 %in% c((redist_ages[k]-10):(redist_ages[k]+5))])))
+      cvF[[k]] <- sd(diff(pop_extF[[k]]$Pop_out[seq(0,OAnew5,5) %in% c((redist_ages[k]-10):(redist_ages[k]+5))]))/abs(mean(diff(pop_extF[[k]]$Pop_out[seq(0,OAnew5,5) %in% c((redist_ages[k]-10):(redist_ages[k]+5))])))
       
     }
     
