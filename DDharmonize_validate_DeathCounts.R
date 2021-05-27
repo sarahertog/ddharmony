@@ -49,16 +49,7 @@ DDharmonize_validate_DeathCounts <- function(locid,
       dd_extract <- dd_extract %>% 
         filter(DataCatalogID %in% DataCatalog$DataCatalogID)
     }
-    
-    # Temp fix: define LocID and SexID since these have been mistakenly removed from get_recorddata() output
-    dd_extract <- dd_extract %>% 
-      mutate(LocID = locid,
-             SexID = NA)  
-    dd_extract$SexID[dd_extract$SexName == "Male"] <- 1
-    dd_extract$SexID[dd_extract$SexName == "Female"] <- 2
-    dd_extract$SexID[dd_extract$SexName == "Both sexes"] <- 3
-    dd_extract$SexID[is.na(dd_extract$SexID)] <- 0
-    
+
   dd_extract <- dd_extract %>% 
     dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
