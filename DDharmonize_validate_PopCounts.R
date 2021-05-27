@@ -38,6 +38,22 @@ DDharmonize_validate_PopCounts <- function(locid,
   
   if (!is.null(dd_extract)) {
     
+    # Extract data catalog info to identify and sub-national censuses
+    
+    DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = 2, addDefault = "false")
+    DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
+    
+    # Keep only those censuses for which isSubnational is FALSE
+    dd_extract <- dd_extract %>% 
+      dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID) %>% 
+      mutate(LocID = locid,
+             SexID = NA)  # added this in temporarily because LocID and SexID are no longer on get_recorddata() output????
+    
+    dd_extract$SexID[dd_extract$SexName == "Male"] <- 1
+    dd_extract$SexID[dd_extract$SexName == "Female"] <- 2
+    dd_extract$SexID[dd_extract$SexName == "Both sexes"] <- 3
+    dd_extract$SexID[is.na(dd_extract$SexID)] <- 0
+    
     dd_extract <- dd_extract %>% 
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
