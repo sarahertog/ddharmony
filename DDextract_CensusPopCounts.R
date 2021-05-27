@@ -1,7 +1,6 @@
 
 # Extract all census population counts for a given country and time period
-# and create unique id according to Census year, Data Source, Statistical Concept, Data Type
-# other fields needed?
+
 
 DDextract_CensusPopCounts <- function(locid, start_year, end_year, DataSourceShortName = NULL, DataSourceYear = NULL) {
   
