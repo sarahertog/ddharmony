@@ -40,7 +40,7 @@ DDharmonize_validate_DeathCounts <- function(locid,
   
   if (!is.null(dd_extract)) {
     
-    # If census data process, extract data catalog info to identify and sub-national censuses
+    # If census data process, extract data catalog info to identify and discard sub-national censuses
     if (process == "census") {
       DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = 2, addDefault = "false")
       DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
@@ -161,7 +161,9 @@ DDharmonize_validate_DeathCounts <- function(locid,
                  DataCatalogID          = vitals_raw$DataCatalogID[1],
                  DataCatalogName        = vitals_raw$DataCatalogName[1],
                  DataProcess            = vitals_raw$DataProcess[1],
+                 DataProcessSort        = vitals_raw$DataProcessSort[1],
                  DataProcessType        = vitals_raw$DataProcessType[1],
+                 DataProcessTypeSort    = vitals_raw$DataProcessTypeSort[1],
                  ReferencePeriod        = vitals_raw$ReferencePeriod[1],
                  TimeUnit               = vitals_raw$TimeUnit[1],
                  TimeStart              = vitals_raw$TimeStart[1],
@@ -173,7 +175,9 @@ DDharmonize_validate_DeathCounts <- function(locid,
                  DataSourceShortName    = vitals_raw$DataSourceShortName[1],
                  DataSourceYear         = max(vitals_raw$DataSourceYear),
                  DataStatusName         = vitals_raw$DataStatusName[1],
+                 DataStatusSort         = vitals_raw$DataStatusSort[1],
                  StatisticalConceptName = vitals_raw$StatisticalConceptName[1],
+                 StatisticalConceptSort = vitals_raw$StatisticalConceptSort[1],
                  DataTypeName           = vitals_raw$DataTypeName[1],
                  DataSeriesID           = vitals_raw$SeriesID[1],
                  DataReliabilityName    = vitals_raw$DataReliabilityName[1],

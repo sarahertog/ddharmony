@@ -4,9 +4,9 @@
 
 dd_rank_id_vitals <- function(indata){
   
-  # Check id duplication for each country-datatype-year
+  # Check id duplication for each country-year
   out <-  indata %>% 
-    group_by(TimeLabel, DataProcessType) %>% 
+    group_by(TimeLabel) %>% 
     mutate(num.id = length(unique(id))) %>% 
     ungroup()
   
@@ -19,44 +19,42 @@ dd_rank_id_vitals <- function(indata){
              maxage = max(AgeStart)) %>% 
       ungroup %>% 
       
-      # First: Prefer ids that have both abridged and complete available
-      group_by(TimeLabel, DataProcessType) %>% 
-      dplyr::filter(num.serie == max(num.serie)) %>% 
+      # First: Rank by Statistical Concept, preferring “Year of occurrence” over “Year of registration”, for example
+      group_by(TimeLabel) %>% 
+      dplyr::filter(StatisticalConceptSort == min(StatisticalConceptSort)) %>% 
       
-      # Second:Prefer better DataReliability (the minimum of the DataReliabilitySort field)
+      # Second: Rank by DataStatus, preferring Final over Provisional, for example
+      dplyr::filter(DataStatusSort == min(DataStatusSort)) %>% 
+      
+      # Third: Rank by DataProcess
+      dplyr::filter(DataProcessSort == min(DataProcessSort)) %>% 
+      
+      # Fourth: Rank by DataProcessType
+      dplyr::filter(DataProcessTypeSort == min(DataProcessTypeSort)) %>% 
+      
+      # Fifth: Prefer better DataReliability 
       dplyr::filter(DataReliabilitySort == min(DataReliabilitySort)) %>% 
       
-      # Third: Prefer StatisticalConceptName == “Year of occurrence” over “Year of registration”
-      mutate(has_occur = ifelse('Year of occurrence' %in% StatisticalConceptName, TRUE, FALSE),
-             keep_occur = ifelse(has_occur == TRUE, 'Year of occurrence', StatisticalConceptName)) %>% 
-      dplyr::filter(StatisticalConceptName == keep_occur) %>% 
+      # Sixth, keep most recent data source year
+      dplyr::filter(DataSourceYear == max(DataSourceYear)) %>% 
       
-      # Third: Prefer StatisticalConceptName == “De facto” over “De jure”
-      mutate(has_occur = ifelse('Year of occurrence' %in% StatisticalConceptName, TRUE, FALSE),
-             keep_occur = ifelse(has_occur == TRUE, 'Year of occurrence', StatisticalConceptName)) %>% 
-      dplyr::filter(StatisticalConceptName == keep_occur) %>% 
+      # Seventh: Prefer ids that have both abridged and complete available
+      dplyr::filter(num.serie == max(num.serie)) %>% 
       
-      # Third: Prefer StatisticalConceptName == “De-facto” over “De-jure”
-      mutate(has_de_facto = ifelse('De-facto' %in% StatisticalConceptName, TRUE, FALSE),
-             keep_de_facto = ifelse(has_de_facto == TRUE, 'De-facto', StatisticalConceptName)) %>% 
-      dplyr::filter(StatisticalConceptName == keep_de_facto) %>% 
-      
-      # Fourth: Prefer the series with the highest open age group
+      # Eighth: Prefer the series with the highest open age group
       dplyr::filter(maxage == max(maxage)) %>% 
       
-      # Fifth: Prefer DataSourceName = "Demographic Yearbook"
+      # Ninth: Prefer DataSourceName = "Demographic Yearbook"
       mutate(has_dyb = ifelse('Demographic Yearbook' %in% DataSourceName, TRUE, FALSE),
              keep_dyb = ifelse(has_dyb == TRUE, 'Demographic Yearbook', DataSourceName)) %>% 
       dplyr::filter(DataSourceName == keep_dyb) %>% 
       
-      # Sixth, keep most recent data source year
-      dplyr::filter(DataSourceYear == max(DataSourceYear)) %>% 
       ungroup() %>%
       
       # Finally discard a couple of duplicate series (if in sample) that have been hardcoded here bc they are not eliminated by above criteria
       dplyr::filter(!(id %in% discard_these_dups)) %>% 
 
-      select(-num.serie, -maxage, -has_occur, -keep_occur, -has_dyb, -keep_dyb, -has_de_facto, -keep_de_facto) 
+      select(-num.serie, -maxage, -has_dyb, -keep_dyb) 
     
   }  else { out1 <- NULL }
   
