@@ -130,11 +130,11 @@ dd_validate_totals_over_sex_new <- function(data){
            X3 = replace(X3, is.na(X3), 0),
            total_over_sex = X0 + X1 + X2,
            X3 = ifelse(X3 > total_over_sex, X3, total_over_sex), # total as max of reported total or sum over sex
-           X1 = ifelse(X1 == 0 & X3 > total_over_sex, X3 - total_over_sex, X1),
+           X1 = ifelse(X1 == 0 & total_over_sex > 0 & X3 > total_over_sex, X3 - total_over_sex, X1),
            total_over_sex = X0 + X1 + X2,
-           X2 = ifelse(X2 == 0 & X3 > total_over_sex, X3 - total_over_sex, X2),
+           X2 = ifelse(X2 == 0 & total_over_sex > 0 & X3 > total_over_sex, X3 - total_over_sex, X2),
            total_over_sex = X0 + X1 + X2,
-           X0 = ifelse(X3 > total_over_sex, X0 + (X3 - total_over_sex), X0 ),
+           X0 = ifelse(X3 > total_over_sex & total_over_sex > 0, X0 + (X3 - total_over_sex), X0 ),
            pct_m = X1 / (X1 + X2), # percentage of males among males plus females
            pct_m = replace(pct_m, is.na(pct_m), 0), # avoids divide by zero problems
            X1 = X1 + (X0 * pct_m),
