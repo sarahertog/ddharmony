@@ -47,7 +47,7 @@ DDharmonize_validate_DeathCounts <- function(locid,
       
       # Keep only those censuses for which isSubnational is FALSE
       dd_extract <- dd_extract %>% 
-        filter(DataCatalogID %in% DataCatalog$DataCatalogID)
+        dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID)
     }
 
   dd_extract <- dd_extract %>% 
