@@ -79,7 +79,7 @@ census_workflow_extend_to_105 <- function(popM,
                             AgeInt_Pop = age2int(Age5, OAvalue = 5),
                             nLx = nLxM,
                             Age_nLx = Age_nLx,
-                            method = "uniform",
+                            method = "mono",
                             Redistribute_from = redist_ages[k],
                             OAnew = OAnew5)
       
@@ -90,7 +90,7 @@ census_workflow_extend_to_105 <- function(popM,
                             AgeInt_Pop = age2int(Age5, OAvalue = 5),
                             nLx = nLxF,
                             Age_nLx = Age_nLx,
-                            method = "uniform",
+                            method = "mono",
                             Redistribute_from = redist_ages[k],
                             OAnew = OAnew5)
       
