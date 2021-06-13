@@ -66,6 +66,14 @@ dd_rank_id <- function(indata){
   
   outdata <- rbind(out1, out2) 
   
+  # check number of ids again
+  lookForDups <- unique(outdata[,c("ReferencePeriod","id")]) %>% 
+    group_by(ReferencePeriod) %>% 
+    mutate(n = 1:length(ReferencePeriod)) %>% 
+    filter(n == 1) # keep only the first id for each census year
+  outdata <- outdata %>% 
+    filter(id %in% lookForDups$id)
+  
   outdata <- outdata %>% 
     arrange(ReferencePeriod) %>% 
     select(!c(num.id))
