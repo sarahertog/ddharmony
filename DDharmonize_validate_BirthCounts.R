@@ -46,9 +46,11 @@ DDharmonize_validate_BirthCounts <- function(locid,
      DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = 2, addDefault = "false")
      DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
      
+     if(nrow(DataCatalog) > 0) {
      # Keep only those censuses for which isSubnational is FALSE
      dd_extract <- dd_extract %>% 
        dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID)
+     }
    }
 
  dd_extract <- dd_extract %>% 
