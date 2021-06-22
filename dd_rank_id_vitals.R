@@ -64,6 +64,14 @@ dd_rank_id_vitals <- function(indata){
   
   outdata <- rbind(out1, out2) 
   
+  # check number of ids again
+  lookForDups <- unique(outdata[,c("TimeLabel","id")]) %>% 
+    group_by(TimeLabel) %>% 
+    mutate(n = 1:length(TimeLabel)) %>% 
+    dplyr::filter(n == 1) # keep only the first id for each census year
+  outdata <- outdata %>% 
+    dplyr::filter(id %in% lookForDups$id)
+  
   outdata <- outdata %>% 
     arrange(TimeLabel, DataProcessType) %>% 
     select(!c(num.id))
