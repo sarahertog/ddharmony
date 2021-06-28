@@ -9,8 +9,14 @@
 ## Valencia: "https://popdiv.dfs.un.org/DemoData/api/" is default
 ## Paperspace: "http://74.82.31.177/DemoData/api/"
 
+# you can access three different data processes (only one at a time):
+# default is census
+# process = c("census","estimate","register")
+
 DDharmonize_validate_PopCounts <- function(locid, 
                                            times, 
+                                           process = "census", 
+                                           return_unique_ref_period = TRUE, # if true, then only most authoratative series will be returned for each reference period, per dd_rank_id()
                                            DataSourceShortName = NULL,
                                            DataSourceYear = NULL,
                                            retainKeys = FALSE, 
@@ -23,30 +29,53 @@ DDharmonize_validate_PopCounts <- function(locid,
   options(dplyr.summarise.inform=F)
 ################################
 ################################
-## PART 1: EXTRACT CENSUS POPULATION COUNTS FROM DEMO DATA AND HARMONIZE TO STANDARD 
+## PART 1: EXTRACT POPULATION COUNTS FROM DEMO DATA AND HARMONIZE TO STANDARD 
 ## ABRIDGED AND COMPLETE AGE GROUPS, BY SERIES
 
   ## UNPD server housing DemoData
   options(unpd_server = server)
   
-# Extract all census population counts for a given country over the period specified in times
-  dd_extract <- DDextract_CensusPopCounts(locid      = locid,
-                                          start_year = times[1],
-                                          end_year   = times[length(times)],
-                                          DataSourceShortName = DataSourceShortName,
-                                          DataSourceYear = DataSourceYear) 
+# Extract population counts for a given country and process over the period specified in times
+  dd_extract <- DDextract_PopCounts(locid   = locid,
+                                    process = process, 
+                                    start_year = times[1],
+                                    end_year   = times[length(times)],
+                                    DataSourceShortName = DataSourceShortName,
+                                    DataSourceYear = DataSourceYear) 
   
   if (!is.null(dd_extract)) {
     
-    # Extract data catalog info to identify and sub-national censuses
+    # Extract data catalog info to identify and sub-national data series
     
-    DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = 2, addDefault = "false")
+    # get data process id
+    dpi <- NA
+    dpi <- ifelse(process == "census", 2, dpi)
+    dpi <- ifelse(process == "estimate", 6, dpi)
+    dpi <- ifelse(process == "register", 9, dpi)
+    
+    DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false")
     DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
     
     if(nrow(DataCatalog) > 0) {
-    # Keep only those censuses for which isSubnational is FALSE
+    # Keep only those population series for which isSubnational is FALSE
     dd_extract <- dd_extract %>% 
       dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID) 
+    }
+    
+    # if data process is estimate or register, then the ReferencePeriod field is empty
+    # fill it in with TimeLabel
+    if (process %in% c("estimate", "register")) {
+      dd_extract$ReferencePeriod <- dd_extract$TimeLabel
+    }
+    
+    if (!("DataSourceTypeName" %in% names(dd_extract))) {
+      # get additional DataSource keys (temporary fix until Dennis adds to DDSQLtools extract)
+      DataSources <- get_datasources(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false") %>% 
+        dplyr::select(LocID, PK_DataSourceID, DataSourceTypeID, DataSourceTypeName, DataSourceStatusID, DataSourceStatusName) %>% 
+        dplyr::rename(DataSourceID = PK_DataSourceID)
+      
+      dd_extract <- dd_extract %>% 
+        left_join(DataSources, by = c("LocID", "DataSourceID"), )
     }
     
     dd_extract <- dd_extract %>% 
@@ -56,8 +85,8 @@ DDharmonize_validate_PopCounts <- function(locid,
            DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
     mutate(id = paste(LocID, LocName, DataProcess, ReferencePeriod, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
-
-  # list of series uniquely identified by Census year - Data Source - Statistical Concept - Data Type
+    
+   # list of series uniquely identified by Reference Period - Data Source - Statistical Concept - Data Type
     ids <- unique(dd_extract$id)
 
   pop_std_all <- list()
@@ -200,6 +229,10 @@ DDharmonize_validate_PopCounts <- function(locid,
              DataSourceAuthor       = pop_raw$DataSourceAuthor[1],
              DataSourceShortName    = pop_raw$DataSourceShortName[1],
              DataSourceYear         = max(pop_raw$DataSourceYear),
+             DataSourceTypeID       = pop_raw$DataSourceTypeID[1],
+             DataSourceTypeName     = pop_raw$DataSourceTypeName[1],
+             DataSourceStatusID     = pop_raw$DataSourceStatusID[1],
+             DataSourceStatusName   = pop_raw$DataSourceStatusName[1],
              DataStatusName         = pop_raw$DataStatusName[1],
              StatisticalConceptName = pop_raw$StatisticalConceptName[1],
              DataTypeName           = pop_raw$DataTypeName[1],
@@ -362,9 +395,14 @@ DDharmonize_validate_PopCounts <- function(locid,
              abridged = abridged == TRUE & AgeLabel != "0-4")
     
     
-    # 10.  When there is more than one id for a given census year, select the most authoritative
+    #  If user wants one id/series per reference year
+    # 10.  When there is more than one id for a given data year, select the most authoritative
     
-    pop_valid_id <- pop_std_valid %>% dd_rank_id 
+    if (return_unique_ref_period == TRUE) {
+      
+      pop_valid_id <- pop_std_valid %>% dd_rank_id 
+    
+    } else { pop_valid_id <- pop_std_valid }
     
     
     
@@ -376,7 +414,7 @@ DDharmonize_validate_PopCounts <- function(locid,
     ref_pds <- unique(out_all$ReferencePeriod)      
   }
   
-  # 11. Look for censuses years that are in raw data, but not in output
+  # 11. Look for data years that are in raw data, but not in output
   #     If there are series with non-standard age groups, then add these to output as well
   
   first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
@@ -411,8 +449,8 @@ DDharmonize_validate_PopCounts <- function(locid,
   }
   
 
-  } else { # if no census pop counts were extracted from DemoData
-    print(paste0("There are no census age distributions available for LocID = ",locid," for the time period ", times[1], " to ", times[length(times)]))
+  } else { # if no pop counts were extracted from DemoData
+    print(paste0("There are no ", process, " age distributions available for LocID = ",locid," for the time period ", times[1], " to ", times[length(times)]))
     out_all <- NULL
   }
   
