@@ -9,7 +9,8 @@
 
 DDharmonize_validate_BirthCounts <- function(locid, 
                                              times, 
-                                             process = c("census", "vr"),
+                                             process = c("census", "vr"), 
+                                             return_unique_ref_period = TRUE, # if true, then only most authoratative series will be returned for each reference period, per dd_rank_id_vitals()
                                              DataSourceShortName = NULL,
                                              DataSourceYear = NULL,
                                              retainKeys = FALSE, 
@@ -41,16 +42,31 @@ DDharmonize_validate_BirthCounts <- function(locid,
  
  if (!is.null(dd_extract)) {
    
-   # If census data process, extract data catalog info to identify and discard sub-national censuses
-   if (process == "census") {
+   # get data process id
+   dpi <- ifelse(process == "census", 2, 36)
+   
+   # filter out sub-national censuses (data process "vr" does not work with get_datacatalog?)
+   if (dpi == 2) {
+     
      DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = 2, addDefault = "false")
      DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
      
      if(nrow(DataCatalog) > 0) {
-     # Keep only those censuses for which isSubnational is FALSE
-     dd_extract <- dd_extract %>% 
-       dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID)
+       # Keep only those population series for which isSubnational is FALSE
+       dd_extract <- dd_extract %>% 
+         dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID) 
      }
+   
+   }
+   
+   if (!("DataSourceTypeName" %in% names(dd_extract))) {
+     # get additional DataSource keys (temporary fix until Dennis adds to DDSQLtools extract)
+     DataSources <- get_datasources(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false") %>% 
+       dplyr::select(LocID, PK_DataSourceID, DataSourceTypeName, DataSourceStatusName) %>% 
+       dplyr::rename(DataSourceID = PK_DataSourceID)
+     
+     dd_extract <- dd_extract %>% 
+       left_join(DataSources, by = c("LocID", "DataSourceID"), )
    }
 
  dd_extract <- dd_extract %>% 
@@ -240,6 +256,8 @@ DDharmonize_validate_BirthCounts <- function(locid,
              DataSourceAuthor       = vitals_raw$DataSourceAuthor[1],
              DataSourceShortName    = vitals_raw$DataSourceShortName[1],
              DataSourceYear         = max(vitals_raw$DataSourceYear),
+             DataSourceTypeName     = vitals_raw$DataSourceTypeName[1],
+             DataSourceStatusName   = vitals_raw$DataSourceStatusName[1],
              DataStatusName         = vitals_raw$DataStatusName[1],
              DataStatusSort         = vitals_raw$DataStatusSort[1],
              StatisticalConceptName = vitals_raw$StatisticalConceptName[1],
@@ -368,7 +386,11 @@ DDharmonize_validate_BirthCounts <- function(locid,
   
   if (nrow(vitals_std_valid) > 0) {
     
-  vitals_valid_id <- vitals_std_valid %>% dd_rank_id_vitals
+    if (return_unique_ref_period == TRUE) {
+      
+      vitals_valid_id <- vitals_std_valid %>% dd_rank_id_vitals
+      
+    } else { vitals_valid_id <- vitals_std_valid }
   
   # arrange the data, with priority colums on the left and data loader keys on the right
   first_columns <- c("id", "LocID", "LocName", "DataProcess", "ReferencePeriod", "TimeStart", "TimeMid", "SexID",
