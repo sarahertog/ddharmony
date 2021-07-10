@@ -1,0 +1,312 @@
+---
+title: "Calculation of 5-year age specific birth rates"
+author: "Shelmith Kariuki"
+date: "2/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# rm(list = ls())
+basedir <- normalizePath("../../ddharmony/")
+knitr::opts_knit$set(root.dir = basedir, message=FALSE, warning=FALSE)
+
+```
+
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 2000)
+options(scipen = 999)
+```
+
+#### 01.) Load the packages that are required.
+
+```{r, message=FALSE, warning=FALSE}
+
+###  create a vector of packages to be installed
+pkgs <- c("tidyverse","data.table","DT","lubridate", "readxl","googlesheets4",
+          "openxlsx", "kableExtra","zoo", "stringr", "EnvStats", "trend", "beepr",
+          "devtools","httr")
+
+###  Check if there are packages you want to load, that are not already installed. 
+miss_pkgs <- pkgs[!pkgs %in% installed.packages()[,1]] 
+
+###  Installing the missing packages
+if(length(miss_pkgs)>0){
+  install.packages(miss_pkgs)
+}
+
+###  Loading all the packages
+invisible(lapply(pkgs,library,character.only=TRUE))
+library(DDSQLtools)
+
+###  Remove the objects that are no longer required
+rm(miss_pkgs)
+rm(pkgs)
+
+```
+
+
+#### 02.) Load location data
+
+```{r, message=FALSE, warning=FALSE}
+load("Shel/Locations.RData")
+
+```
+
+#### 1.) Load the 5-year population data
+
+```{r, message=FALSE, warning=FALSE}
+
+pop5_df0 <- read_xlsx("Shel/WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.xlsx")
+pop5_df <- pop5_df0[-1:-11, ] 
+
+colnames(pop5_df) <- pop5_df[1,]
+pop5_df <- pop5_df[-1, ]
+
+```
+
+
+#### 2.) Reshape the data so that we have age labels on one column, and population counts in another, and rename the agelabel variable to AgeLabel_denom.
+
+```{r, message=FALSE, warning=FALSE}
+pop5_df <- pop5_df %>% 
+  mutate(`Country code` = as.numeric(trimws(`Country code`))) %>% 
+  gather("AgeLabel_denom", "pop.count", contains("-"), contains("+")) %>% 
+  rename(LocID = `Country code`,
+         TimeLabel = `Reference date (as of 1 July)`) 
+
+## Deal with scientific notation
+pop5_df <- pop5_df %>% 
+  mutate(sci_exists = ifelse(pop.count %in% grep("E", pop.count, value = T, ignore.case = FALSE),
+                             1, 0),
+         sci_not = ifelse(sci_exists == 1, as.numeric(trimws(gsub(".*E", "", pop.count))), NA),
+         pop.count = ifelse(sci_exists == 1, trimws(gsub("E.*", "", pop.count)), trimws(pop.count)),
+         pop.count = as.numeric(pop.count)) %>% 
+  mutate(pop.count = ifelse(sci_exists == 1, pop.count * 10^sci_not, 
+                            pop.count)) %>% 
+  select(-sci_exists, -sci_not) %>% 
+  arrange(TimeLabel)
+
+```
+
+
+#### 3. Specify the location
+
+```{r, message=FALSE, warning=FALSE}
+# lid <- sample(unique(pop5_df$LocID), 1)
+lid <- 466
+pop5_df2 <- pop5_df %>% 
+  filter(LocID == lid)
+
+```
+
+
+#### 4.) Load births data
+
+```{r, message=FALSE, warning=FALSE}
+
+req <- GET("https://api.github.com/repos/sarahertog/ddharmony/git/trees/main?recursive=1")
+stop_for_status(req)
+filelist <- unlist(lapply(content(req)$tree, "[", "path"), use.names = F)
+
+for (filename in filelist) {
+  
+  one_function <- paste0("https://github.com/sarahertog/ddharmony/blob/main/", filename, "?raw=TRUE")
+  source_url(one_function)
+  rm(one_function)
+}
+rm(req, filelist, filename)
+
+# Births by age of mother: vr
+births_vr <- try(DDharmonize_validate_BirthCounts(locid = lid, process = "vr", times = 1950:2020, retainKeys = TRUE))
+
+# Births by age of mother: census
+births_census <- try(DDharmonize_validate_BirthCounts(locid = lid, process = "census", times = 1950:2020, retainKeys = TRUE))
+
+# if(any(class(births_vr) %in% "data.frame") & any(class(births_census) %in% "data.frame")){
+#   
+#     common = names(births_vr)[names(births_vr) %in% names(births_census)]
+#   births_census[common] <- lapply(common, function(x) {
+#     match.fun(paste0("as.", class(births_vr[[x]])))(births_census[[x]])})
+#   
+#   births_df <- bind_rows(births_vr,births_census )
+# }else
+#  if(any(class(births_vr) %in% "data.frame") & any(!class(births_census) %in% "data.frame" )){
+#   births_df <- births_vr
+# }else 
+#  if(any(!class(births_vr) %in% "data.frame") & any(class(births_census) %in% "data.frame" )){  births_df <- births_census
+#  }  
+births_df <- births_census
+
+```
+
+
+#### 5.) Merge the births data with the Location data
+
+```{r, message=FALSE, warning=FALSE}
+births_df2 <- Locations %>% 
+  right_join(.,births_df , by = c("LocID", "LocName")) %>% 
+  rename(AgeLabel_num = AgeLabel)
+
+```
+
+
+#### 6.) Extract the 5-year counts and rename the agelabel variable to AgeLabel_num.
+
+```{r, message=FALSE, warning=FALSE}
+births_df2_5 <- births_df2 %>% 
+  filter(five_year == TRUE)
+
+```
+
+#### 7.) Generate a variable that shows the maximum age label
+
+```{r, message=FALSE, warning=FALSE}
+if(nrow(births_df2_5) >0){
+
+births_df2_5 <- births_df2_5 %>% 
+  separate(AgeLabel_num, into = c("ll", "ul"), sep = "-", remove = FALSE) %>% 
+  mutate(ul = ifelse(is.na(ul) & 
+                       AgeLabel_num %in% grep("\\d+", AgeLabel_num, value = TRUE), AgeLabel_num, ul)) %>% 
+  mutate(ul = as.numeric(trimws(gsub("\\+", "", ul)))) %>% 
+  group_by(id) %>% 
+  mutate(max_age = ifelse(any(ul == max(ul, na.rm = TRUE)), 
+                          AgeLabel_num[ul == max(ul, na.rm = TRUE)], NA)) %>% 
+  ungroup() 
+}
+
+births_df2_5 <- births_df2_5 %>% 
+  mutate(TimeLabel = as.character(TimeLabel))
+  
+```
+
+
+#### 8.) Merge the population data with the births data.
+
+```{r, message=FALSE, warning=FALSE}
+merged_df <- pop5_df2 %>% 
+  #mutate(LocID = as.numeric(trimws(LocID))) %>% 
+  #        TimeLabel = as.numeric(trimws(TimeLabel))) %>% 
+  full_join(.,births_df2_5 , by = c("LocID", "TimeLabel",  "AgeLabel_denom" = "AgeLabel_num")) %>% 
+  rename(births.count = DataValue, 
+         AgeLabel = AgeLabel_denom) %>% 
+  relocate(c(TimeLabel, AgeLabel, pop.count, births.count), .after = last_col()) %>% 
+  arrange(TimeLabel)
+
+if(!"max_age" %in% names(merged_df)){
+merged_df$max_age <- NA
+}
+
+## Fill in the missing values
+merged_df <- merged_df %>% 
+  group_by(TimeLabel) %>% 
+  mutate(id = na.locf0(id),
+         max_age = na.locf0(max_age, fromLast = TRUE)) %>% 
+  ungroup() %>% 
+  group_by(id, TimeLabel) %>% 
+  mutate(max_age = ifelse(all(is.na(births.count)), NA, max_age)) %>% 
+  ungroup()
+
+## Split age label into ll and ul. 
+merged_df <- merged_df %>% 
+  separate(AgeLabel, into = c("ll", "ul"), sep = "-", remove = FALSE) %>% 
+  mutate(ul = ifelse(is.na(ul) & 
+                       AgeLabel %in% grep("\\d+", AgeLabel, value = TRUE), AgeLabel, ul)) %>% 
+  mutate(max_age2 = max_age) %>% 
+  mutate(across(c(max_age2, ll, ul), ~as.numeric(trimws(gsub("\\+", "", .))))) %>% 
+  mutate(juncture = ifelse(ul >= max_age2, 1, 0)) %>% 
+  mutate(AgeLabel = ifelse(is.na(juncture), AgeLabel,
+           ifelse(juncture == 1 & AgeLabel!= "Total"  , max_age, 
+                  AgeLabel ))) %>% 
+  group_by(id) %>% 
+  mutate(pop.count = ifelse(is.na(juncture), pop.count,
+           ifelse(juncture == 1, sum(pop.count[juncture == 1], na.rm = TRUE),
+                            pop.count))) %>% 
+  ungroup()
+
+## Drop the ages that have been collapsed into a smaller bracket
+merged_df <- merged_df %>% 
+  mutate(todrop = ifelse(AgeLabel == max_age & is.na(births.count) & !is.na(pop.count),
+                         "drop", "keep")) %>% 
+  filter(todrop == "keep"|is.na(todrop)) %>% 
+  group_by(id) %>% 
+  mutate(pop.count = ifelse(is.na(pop.count), sum(pop.count, na.rm = TRUE), pop.count)) %>% 
+  select(-ll, -ul, -max_age, -juncture, -todrop, -max_age2) %>% 
+  ungroup()
+
+## Generate a variable that shows whether births are missing, and another that shows whether population counts are missing
+merged_df <- merged_df %>% 
+    group_by(id, TimeLabel) %>% 
+  mutate(missing_births = ifelse(all(is.na(births.count)|all(births.count == 0)), TRUE, FALSE),
+         missing_popcounts = ifelse(all(is.na(pop.count)|all(pop.count == 0)), TRUE, FALSE)) %>% 
+  ungroup()
+
+```
+
+
+#### 9.) Calculate the age specific birth rates for each of the years and age labels.
+
+```{r, message=FALSE, warning=FALSE}
+merged_df <- merged_df %>% 
+  mutate(asbr = births.count / pop.count)
+
+```
+
+
+#### 10.) Reshape the data so that we have category on one variable (pop.count, births.count, asbr).
+
+```{r, message=FALSE, warning=FALSE}
+merged_df2 <- merged_df %>% 
+  select(-Index, -AgeStart, -AgeEnd, -AgeSpan, -AgeSort, -abridged, -complete, 
+         -non_standard) %>% 
+  mutate(pop.count = ifelse(is.na(pop.count), 0, pop.count),
+         births.count = ifelse(is.na(births.count), 0, births.count),
+         asbr = ifelse(is.na(asbr), 0, asbr)) %>% 
+  group_by(id, TimeLabel) %>% 
+  mutate_all(~na.locf0(., fromLast = FALSE)) %>% 
+  ungroup() %>% 
+  gather("category", "value", pop.count, births.count, asbr) %>%
+  mutate(AgeLabel = trimws(str_squish(AgeLabel))) %>% 
+  group_by(id, TimeLabel) %>% 
+  spread(AgeLabel, value) %>% 
+  arrange(TimeLabel) %>% 
+  ungroup()
+  
+if(!"Total" %in% names(merged_df2)){
+  merged_df2$Total <- NA
+}
+  
+  vars <- c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30+" , "30-34","35-39","40+", "40-44", "45+", "45-49", "50+", "50-54", "55+", "55-59","60+",  "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-99", "100+")
+  
+merged_df2 <- merged_df2 %>% 
+  select(Variant: category, any_of(vars) , 
+         everything()) 
+  
+agelabel_vars <- merged_df2 %>% 
+  select(-Variant: -category, -Total) %>% 
+  names()
+
+
+merged_df2$Total <- ifelse(is.na(merged_df2$Total), 
+                           apply(merged_df2[,agelabel_vars], 1, function(x) 
+                             sum(x, na.rm = TRUE)),merged_df2$Total)
+
+vars <- grep("\\d", names(merged_df2), value = TRUE)
+vars <- vars[!vars %in% "ISO3Alpha"]
+
+merged_df2 <- merged_df2 %>% 
+  select(id, TimeLabel:category, any_of(vars) ,  Total)
+
+```
+
+
+#### 11.) Extract the estimates.
+
+```{r, }
+asbr5_df <- merged_df2 %>% 
+  filter(category == "asbr")
+```
+
+```{r}
+# 234, 292, 500, 584 missing from pop data.
+```
+
