@@ -235,12 +235,12 @@ DDharmonize_validate_PopCounts <- function(locid,
              DataStatusName         = pop_raw$DataStatusName[1],
              StatisticalConceptName = pop_raw$StatisticalConceptName[1],
              DataTypeName           = pop_raw$DataTypeName[1],
-             DataSeriesID           = pop_raw$SeriesID[1],
              DataReliabilityName    = pop_raw$DataReliabilityName[1],
              DataReliabilitySort    = pop_raw$DataReliabilitySort[1],
              ModelPatternName       = pop_raw$ModelPatternName[1],
              PeriodTypeName         = pop_raw$PeriodTypeName[1],
-             PeriodGroupName        = pop_raw$PeriodGroupName[1])
+             PeriodGroupName        = pop_raw$PeriodGroupName[1],
+             SeriesIDs              = I(list(unique(pop_raw$SeriesID))))
 
     pop_std_all[[i]] <- pop_all
     
@@ -381,7 +381,7 @@ DDharmonize_validate_PopCounts <- function(locid,
                      "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
                      "complete", "non_standard")
   keep_columns <- names(pop_std_all)
-  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", first_columns))]
+  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", first_columns))]
   
   # initialize ref_pds and output data
   ref_pds <- 0
@@ -419,6 +419,9 @@ DDharmonize_validate_PopCounts <- function(locid,
   first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
   skipped <- dd_extract %>% 
     dplyr::filter(!(ReferencePeriod %in% ref_pds)) %>% 
+    group_by(id) %>% 
+    mutate(SeriesIDs = I(list(unique(SeriesID)))) %>% 
+    ungroup() %>% 
     select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
