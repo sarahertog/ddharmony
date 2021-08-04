@@ -264,12 +264,12 @@ DDharmonize_validate_BirthCounts <- function(locid,
              StatisticalConceptName = vitals_raw$StatisticalConceptName[1],
              StatisticalConceptSort = vitals_raw$StatisticalConceptSort[1],
              DataTypeName           = vitals_raw$DataTypeName[1],
-             DataSeriesID           = vitals_raw$SeriesID[1],
              DataReliabilityName    = vitals_raw$DataReliabilityName[1],
              DataReliabilitySort    = vitals_raw$DataReliabilitySort[1],
              ModelPatternName       = vitals_raw$ModelPatternName[1],
              PeriodTypeName         = vitals_raw$PeriodTypeName[1],
-             PeriodGroupName        = vitals_raw$PeriodGroupName[1])
+             PeriodGroupName        = vitals_raw$PeriodGroupName[1],
+             SeriesIDs              = I(list(unique(vitals_raw$SeriesID))))
     }
     vitals_std_all[[i]] <- vitals_all
     
@@ -398,7 +398,7 @@ DDharmonize_validate_BirthCounts <- function(locid,
                      "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
                      "complete", "non_standard")
   keep_columns <- names(vitals_std_all)
-  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", first_columns))]
+  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", first_columns))]
   
   out_all <- vitals_valid_id %>% 
     mutate(non_standard = FALSE,
@@ -414,6 +414,9 @@ DDharmonize_validate_BirthCounts <- function(locid,
   first_columns <- first_columns[!(first_columns %in% c("five_year", "abridged", "complete", "non_standard", "note"))]
   skipped <- dd_extract %>% 
     dplyr::filter(!(TimeLabel %in% out_all$TimeLabel)) %>% 
+    group_by(id) %>% 
+    mutate(SeriesIDs = I(list(unique(SeriesID)))) %>% 
+    ungroup() %>% 
     select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,

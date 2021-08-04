@@ -201,12 +201,12 @@ DDharmonize_validate_DeathCounts <- function(locid,
                  StatisticalConceptName = vitals_raw$StatisticalConceptName[1],
                  StatisticalConceptSort = vitals_raw$StatisticalConceptSort[1],
                  DataTypeName           = vitals_raw$DataTypeName[1],
-                 DataSeriesID           = vitals_raw$SeriesID[1],
                  DataReliabilityName    = vitals_raw$DataReliabilityName[1],
                  DataReliabilitySort    = vitals_raw$DataReliabilitySort[1],
                  ModelPatternName       = vitals_raw$ModelPatternName[1],
                  PeriodTypeName         = vitals_raw$PeriodTypeName[1],
-                 PeriodGroupName        = vitals_raw$PeriodGroupName[1])
+                 PeriodGroupName        = vitals_raw$PeriodGroupName[1],
+                 SeriesIDs              = I(list(unique(vitals_raw$SeriesID))))
       }
       vitals_std_all[[i]] <- vitals_all
       
@@ -334,7 +334,7 @@ if (nrow(vitals_std_all) > 0) {
                      "AgeStart", "AgeEnd", "AgeLabel", "AgeSpan", "AgeSort", "DataValue", "note", "abridged", "five_year",
                      "complete", "non_standard")
   keep_columns <- names(vitals_std_all)
-  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataSeriesID", "DataReliabilitySort", first_columns))]
+  keep_columns <- keep_columns[!(keep_columns %in% c("series", "id_series", "DataReliabilitySort", first_columns))]
   
   # initialize ref_pds and output data
   ref_pds <- 0
@@ -373,6 +373,9 @@ if (nrow(vitals_std_all) > 0) {
     
   skipped <- dd_extract %>% 
     dplyr::filter(!(TimeLabel %in% ref_pds)) %>% 
+    group_by(id) %>% 
+    mutate(SeriesIDs = I(list(unique(SeriesID)))) %>% 
+    ungroup() %>% 
     select(all_of(first_columns), all_of(keep_columns)) %>% 
     mutate(five_year = FALSE,
            abridged = FALSE,
