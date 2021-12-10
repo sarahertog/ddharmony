@@ -81,8 +81,12 @@ DDharmonize_validate_PopCounts <- function(locid,
     dd_extract <- dd_extract %>% 
     # Discard DataTypeName==“Direct (standard abridged age groups computed)” 
     # or “Direct (standard abridged age groups computed - Unknown redistributed)”
-    dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
-           DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)') %>% 
+    # dplyr::filter(DataTypeName!= 'Direct (standard abridged age groups computed)',
+    #        DataTypeName!= 'Direct (standard abridged age groups computed - Unknown redistributed)',
+    #        DataTypeName != 'Direct (age standardized)',
+    #        DataTypeName != 'Direct (protocol adjusted)',
+    #        DataTypeName != 'Population by age and sex (household sample without expansion weights)') %>% 
+    dplyr::filter(DataTypeID %in% c(16, 89, 183, 58, 141)) %>% 
     mutate(id = paste(LocID, LocName, DataProcess, ReferencePeriod, DataSourceName, StatisticalConceptName, DataTypeName, DataReliabilityName, sep = " - ")) %>% 
     arrange(id)
     
