@@ -70,9 +70,11 @@ DDharmonize_validate_PopCounts <- function(locid,
     
     if (!("DataSourceTypeName" %in% names(dd_extract))) {
       # get additional DataSource keys (temporary fix until Dennis adds to DDSQLtools extract)
-      DataSources <- get_datasources(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false") %>% 
+      DataSources <- get_datasources(locIds = c(locid, 900), addDefault = "false") %>% 
         dplyr::select(LocID, PK_DataSourceID, DataSourceTypeName, DataSourceStatusName) %>% 
-        dplyr::rename(DataSourceID = PK_DataSourceID)
+        dplyr::rename(DataSourceID = PK_DataSourceID) %>% 
+        mutate(LocID = locid) %>% 
+        distinct()
       
       dd_extract <- dd_extract %>% 
         left_join(DataSources, by = c("LocID", "DataSourceID"), )
