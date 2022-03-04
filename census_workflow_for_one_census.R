@@ -1,5 +1,6 @@
 # implements the census workflow steps for a single census
 # as described in flowchart XX
+
         
 census_workflow_for_one_census <- function(dd_census_extract, # a census extract returned by DDharmonize_validate_PopCounts()
                                            LocID,
@@ -74,6 +75,7 @@ census_workflow_for_one_census <- function(dd_census_extract, # a census extract
               pop <- NULL
               use_series <- NULL
               print(paste0("WARNING: There are no suitable data series available for the ", census_refpd, " census of ", dd_census_extract$LocName[1]))
+			  log_print(paste0("WARNING: There are no suitable data series available for the ", census_refpd, " census of ", dd_census_extract$LocName[1]), msg = TRUE, console=FALSE)
               
             }
           }
@@ -88,7 +90,7 @@ census_workflow_for_one_census <- function(dd_census_extract, # a census extract
           # set aside the input population series
           pop_in <- pop %>% 
             dplyr::filter(AgeLabel != "Total" & SexID %in% c(1,2)) %>% 
-            select(SexID, AgeStart, DataValue, id)
+            dplyr::select(SexID, AgeStart, DataValue, id)
           
     ###############################################################################
     ###############################################################################
@@ -145,6 +147,12 @@ census_workflow_for_one_census <- function(dd_census_extract, # a census extract
     ###############################################################################
     ###############################################################################
     # D. Extend such that the open age group is  for ages 105+
+          
+          min_age_redist <- min(max(pop_working$Age), 65)
+          if (round(floor(LocID)) == 440 & round(floor(census_reference_date),0) == 1989) {
+            min_age_redist <- 85
+          }
+         # temporary fix for Lithuania 1989 census which has a big cohort effect that confuses the extension process
 
           OPAG_out <- census_workflow_extend_to_105(popM = pop_working$popM,
                                                     popF = pop_working$popF,
@@ -156,7 +164,7 @@ census_workflow_for_one_census <- function(dd_census_extract, # a census extract
                                                     Age_lx = Age_lx,
                                                     AgeInt_lx = AgeInt_lx,
                                                     cv_tolerance = 0.75, # coefficient of variation tolerance for join point
-                                                    min_age_redist = min(max(pop_working$Age), 65),
+                                                    min_age_redist = min_age_redist,
                                                     OAnew = 105)
           
           pop_working <- data.frame(Age = OPAG_out$Age_ext,
