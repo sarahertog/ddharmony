@@ -26,7 +26,6 @@ DDextract_PopTotals <- function(locid,
                                       process = c("census","estimate","register"),
                                       start_year,
                                       end_year,
-                                      locType = "whole", # default is whole area
                                       DataSourceShortName = NULL,
                                       DataSourceYear = NULL,
                                       server = "https://popdiv.dfs.un.org/DemoData/api/") {
