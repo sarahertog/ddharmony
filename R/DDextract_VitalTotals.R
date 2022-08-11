@@ -21,7 +21,7 @@
 #' @return A dataset showing counts for each location, type of data (births or deaths), process, year, sex and age label.
 #'
 #' @export
-#'}
+
 DDextract_VitalTotals <- function(locid,
                                   type = c("births","deaths"),
                                   process = c("census","vr"),
