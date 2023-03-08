@@ -50,7 +50,8 @@ DDextract_VitalCounts <- function(locid,
                                   DataSourceShortName = NULL,
                                   DataSourceYear = NULL) {
 
-
+  options(timeout = max(1000, getOption("timeout"))) # reset timeout limit to deal with Valencia server problems
+  
 ## List the indicator ids for each type of data
   if (type == "births") {
     indicator_ids <- c(159,170) # total births and births by age of mother

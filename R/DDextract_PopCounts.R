@@ -31,6 +31,8 @@ DDextract_PopCounts <- function(locid,
                                       DataSourceShortName = NULL,
                                       DataSourceYear = NULL) {
 
+  options(timeout = max(1000, getOption("timeout"))) # reset timeout limit to deal with Valencia server problems
+  
   ## Indicate the data process id. dpi == 2 if process is census, 6 if process is estimate and 9 if process is register
   dpi <- NA
   dpi <- ifelse(process == "census", 2, dpi)
