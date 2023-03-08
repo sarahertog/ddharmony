@@ -6,6 +6,7 @@
 \usage{
 DDharmonize_validate_PopCounts(
   locid,
+  dd_extract = NULL,
   times,
   process = c("census", "estimate", "register"),
   locType = "whole",
@@ -18,6 +19,8 @@ DDharmonize_validate_PopCounts(
 }
 \arguments{
 \item{locid}{Location id}
+
+\item{dd_extract}{A data frame extracted from DemoData using the DDextract_PopCounts() function. If NULL then the function will query DemoData for a new extract.}
 
 \item{times}{The period of the data to be extracted. You can extract one year data e.g times = 2020 or a longer period of time e.g times = c(1950, 2020).}
 

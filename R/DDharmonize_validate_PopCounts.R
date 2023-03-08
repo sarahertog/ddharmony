@@ -10,6 +10,7 @@
 #' See the \href{https://shelmith-kariuki.github.io/rddharmony/articles/DDharmonize_validate_PopCounts.html}{DDharmonize_validate_PopCounts} vignette for more details about this function.
 #'
 #' @param locid Location id
+#' @param dd_extract A data frame extracted from DemoData using the DDextract_PopCounts() function. If NULL then the function will query DemoData for a new extract.
 #' @param times The period of the data to be extracted. You can extract one year data e.g times = 2020 or a longer period of time e.g times = c(1950, 2020).
 #' @param process The process through which the data was obtained from various sources i.e either via census , register or estimates. By default, the function pulls data obtained through both of these processes.
 #' @param locType The location type for which data are extracted i.e. Whole, Urban, Rural
@@ -45,6 +46,7 @@
 #'}
 
 DDharmonize_validate_PopCounts <- function(locid,
+                                           dd_extract = NULL, 
                                            times,
                                            process = c("census", "estimate", "register"),
                                            locType = "whole",
@@ -61,15 +63,17 @@ options(dplyr.summarise.inform=F)
 
   ## UNPD server housing DemoData
   options(unpd_server = server)
-
-  ## 1. Extract population counts for a given country and process over the period specified in times
-  dd_extract <- DDextract_PopCounts(locid   = locid,
-                                    process = process,
-                                    locType = locType,
-                                    start_year = times[1],
-                                    end_year   = times[length(times)],
-                                    DataSourceShortName = DataSourceShortName,
-                                    DataSourceYear = DataSourceYear)
+  
+  if (is.null(dd_extract)) {
+    ## 1. Extract population counts for a given country and process over the period specified in times
+    dd_extract <- DDextract_PopCounts(locid   = locid,
+                                      process = process,
+                                      locType = locType,
+                                      start_year = times[1],
+                                      end_year   = times[length(times)],
+                                      DataSourceShortName = DataSourceShortName,
+                                      DataSourceYear = DataSourceYear)
+  }
 
   if (!is.null(dd_extract)) {
 
