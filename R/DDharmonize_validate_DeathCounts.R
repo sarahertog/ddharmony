@@ -586,18 +586,19 @@ DDharmonize_validate_DeathCounts <- function(locid,
         out_all2 <- out_all ## 29th Oct change
       }
 
+      ## This is causing an error bc it requires DataReliabilitySort, but that field is no longer on the data
       ##  Combine the harmonized data with indicator 188 data and clean it
 
-      if(nrow(dd_extract_188) >0){
-        out_all_appended <- dd_append_tcs_cas(indata = out_all2, ## 29th Oct change
-                                              type = "deaths",
-                                              tcs_data = dd_extract_188,
-                                              ind = 188)
-      }else
-      {
-        out_all_appended <- out_all2 ## 29th Oct change
-      }
-
+      # if(nrow(dd_extract_188) >0){
+      #   out_all_appended <- dd_append_tcs_cas(indata = out_all2, ## 29th Oct change
+      #                                         type = "deaths",
+      #                                         tcs_data = dd_extract_188,
+      #                                         ind = 188)
+      # }else
+      # {
+      #   out_all_appended <- out_all2 ## 29th Oct change
+      # }
+      out_all_appended <- out_all2
 
       ## Retain variables of interest
 
