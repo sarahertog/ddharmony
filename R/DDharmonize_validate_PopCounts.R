@@ -53,6 +53,7 @@ DDharmonize_validate_PopCounts <- function(locid,
                                            return_unique_ref_period = TRUE, # if true, then only most authoritative series will be returned for each reference period, per dd_rank_id()
                                            DataSourceShortName = NULL,
                                            DataSourceYear = NULL,
+                                           includeSubNational = FALSE,
                                            retainKeys = FALSE,
                                            server = "https://popdiv.dfs.un.org/DemoData/api/") {
 options(dplyr.summarise.inform=F)
@@ -94,21 +95,22 @@ options(dplyr.summarise.inform=F)
     ## Shel: Edited this part after I kept getting the error: Error in open.connection(con, "rb") : HTTP error 500.
     # DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false")
     # DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
-
-    DC <- NULL
-    for (i in 1:length(dpi)){
-
-    DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = dpi[i], addDefault = "false")
-    DC <- rbind(DC, DataCatalog)
-    }
-    DataCatalog <- DC
-    DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
-    rm(DC)
-
-    if(nrow(DataCatalog) > 0) {
-    # Keep only those population series for which isSubnational is FALSE
-    dd_extract <- dd_extract %>%
-      dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID)
+    if (includeSubNational == FALSE) {
+      DC <- NULL
+      for (i in 1:length(dpi)){
+  
+      DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = dpi[i], addDefault = "false")
+      DC <- rbind(DC, DataCatalog)
+      }
+      DataCatalog <- DC
+      DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
+      rm(DC)
+  
+      if(nrow(DataCatalog) > 0) {
+      # Keep only those population series for which isSubnational is FALSE
+      dd_extract <- dd_extract %>%
+        dplyr::filter(DataCatalogID %in% DataCatalog$DataCatalogID)
+      }
     }
 
     # if data process is estimate or register, then the ReferencePeriod field is empty
