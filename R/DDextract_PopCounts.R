@@ -24,7 +24,7 @@
 
 
 DDextract_PopCounts <- function(locid,
-                                      process = c("census","estimate","register"),
+                                      process = c("census","estimate","register", "survey"),
                                       start_year,
                                       end_year,
                                       locType = "whole", # default is whole area
@@ -34,10 +34,12 @@ DDextract_PopCounts <- function(locid,
   options(timeout = max(1000, getOption("timeout"))) # reset timeout limit to deal with Valencia server problems
   
   ## Indicate the data process id. dpi == 2 if process is census, 6 if process is estimate and 9 if process is register
-  dpi <- NA
-  dpi <- ifelse(process == "census", 2, dpi)
-  dpi <- ifelse(process == "estimate", 6, dpi)
-  dpi <- ifelse(process == "register", 9, dpi)
+  dpi <- NULL
+  if ("census" %in% process)   dpi <- c(dpi, 2)
+  if ("estimate" %in% process) dpi <- c(dpi, 6)
+  if ("register" %in% process) dpi <- c(dpi, 9)
+  if ("survey" %in% process)   dpi <- c(dpi, 11, 12)
+  
 
   ## Indicate location area type. lt ==2 if whole, 3 if urban, 4 if rural
   lt <- NA
@@ -49,7 +51,7 @@ DDextract_PopCounts <- function(locid,
   # Abridged or five year age groups
   tryCatch({
     pop_abridged <- get_recorddata(locIds = locid,
-                                   dataProcessIds = dpi,
+                                   dataProcessTypeIds = dpi,
                                    indicatorIds = 58,# Population by age and sex (abridged)
                                    startYear = start_year,
                                    endYear = end_year,
@@ -66,7 +68,7 @@ DDextract_PopCounts <- function(locid,
   # By single year of age
   tryCatch({
     pop_single <- get_recorddata(locIds = locid,
-                                   dataProcessIds = dpi,
+                                   dataProcessTypeIds = dpi,
                                    indicatorIds = 60,# Population by age and sex (Complete by single years of age)
                                    startYear = start_year,
                                    endYear = end_year,

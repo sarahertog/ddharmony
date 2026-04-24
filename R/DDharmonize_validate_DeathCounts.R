@@ -35,7 +35,7 @@
 #' \dontrun{
 #' kenya_df <- DDharmonize_validate_DeathCounts(404,
 #'                                               c(1950,2020),
-#'                                               process = c("census", "vr"),
+#'                                               process = c("census", "vr", "survey"),
 #'                                               return_unique_ref_period = TRUE,
 #'                                               DataSourceShortName = NULL,
 #'                                               DataSourceYear = NULL,
@@ -44,7 +44,7 @@
 #' }
 DDharmonize_validate_DeathCounts <- function(locid,
                                              times,
-                                             process = c("census", "vr"),
+                                             process = c("census", "vr", "survey"),
                                              return_unique_ref_period = TRUE, # if true, then only most authoritative series will be returned for each reference period, per dd_rank_id_vitals()
                                              DataSourceShortName = NULL,
                                              DataSourceYear = NULL,
@@ -76,20 +76,23 @@ DDharmonize_validate_DeathCounts <- function(locid,
     assign("raw_df", dd_extract, .GlobalEnv)
 
     # get data process id
-    dpi <- ifelse(process == "census", 2, 36)
+    dpi <- NA
+    dpi <- ifelse(process == "census", 2, dpi)
+    dpi <- ifelse(process == "vr", 9, dpi)
+    dpi <- ifelse(process == "survey", c(11,12), dpi)
 
     ## 2. Drop sub-national censuses (data process "vr" does not work with get_datacatalog?)
     # filter out sub-national censuses (data process "vr" does not work with get_datacatalog?)
     # if (dpi == 2) {
     # Gets all DataCatalog records
 
-    DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = 2, addDefault = "false")
+    DataCatalog <- get_datacatalog(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false")
     DataCatalog <- DataCatalog[DataCatalog$isSubnational==FALSE,]
 
     if(nrow(DataCatalog) > 0) {
       # Keep only those population series for which isSubnational is FALSE
       dd_extract <- dd_extract %>%
-        dplyr::filter(DataProcessID == 36 |(DataProcessID == 2 & DataCatalogID %in% DataCatalog$DataCatalogID))
+        dplyr::filter(DataProcessID == 36 | DataCatalogID %in% DataCatalog$DataCatalogID)
     }
 
     # }
@@ -98,8 +101,9 @@ DDharmonize_validate_DeathCounts <- function(locid,
 
     ## Added by Shel because locid == 832 exists in get_locations() but not in get_datasources().
     ## To confirm with Sara
-    possible_ids <- get_datasources()$LocID
-    if (!("DataSourceTypeName" %in% names(dd_extract)) & locid %in% possible_ids) {
+    # possible_ids <- get_datasources()$LocID
+    # if (!("DataSourceTypeName" %in% names(dd_extract)) & locid %in% possible_ids) {
+    if (!("DataSourceTypeName" %in% names(dd_extract))) {
 
       # get additional DataSource keys (temporary fix until Dennis adds to DDSQLtools extract)
       DataSources <- get_datasources(locIds = locid, dataProcessTypeIds = dpi, addDefault = "false") %>%

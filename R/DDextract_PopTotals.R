@@ -23,7 +23,7 @@
 
 
 DDextract_PopTotals <- function(locid,
-                                      process = c("census","estimate","register"),
+                                      process = c("census","estimate","register", "survey"),
                                       start_year,
                                       end_year,
                                       DataSourceShortName = NULL,
@@ -34,14 +34,15 @@ DDextract_PopTotals <- function(locid,
   options(unpd_server = server)
 
   ## Indicate the data process id. dpi == 2 if process is census, 6 if process is estimate and 9 if process is register
-  dpi <- NA
-  dpi <- ifelse(process == "census", 2, dpi)
-  dpi <- ifelse(process == "estimate", 6, dpi)
-  dpi <- ifelse(process == "register", 9, dpi)
+  dpi <- NULL
+  if ("census" %in% process)   dpi <- c(dpi, 2)
+  if ("estimate" %in% process) dpi <- c(dpi, 6)
+  if ("register" %in% process) dpi <- c(dpi, 9)
+  if ("survey" %in% process)   dpi <- c(dpi, 11, 12)
 
   tryCatch({
     pop_total <- get_recorddata(locIds = locid,
-                                   dataProcessIds = dpi,
+                                   dataProcessTypeIds = dpi,
                                    indicatorIds = 52,# Total population by sex
                                    startYear = start_year,
                                    endYear = end_year,

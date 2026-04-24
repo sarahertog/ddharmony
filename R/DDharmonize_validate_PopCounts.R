@@ -48,7 +48,7 @@
 DDharmonize_validate_PopCounts <- function(locid,
                                            dd_extract = NULL, 
                                            times,
-                                           process = c("census", "estimate", "register"),
+                                           process = c("census", "estimate", "register", "survey"),
                                            locType = "whole",
                                            return_unique_ref_period = TRUE, # if true, then only most authoritative series will be returned for each reference period, per dd_rank_id()
                                            DataSourceShortName = NULL,
@@ -90,6 +90,7 @@ options(dplyr.summarise.inform=F)
     dpi <- ifelse(process == "census", 2, dpi)
     dpi <- ifelse(process == "estimate", 6, dpi)
     dpi <- ifelse(process == "register", 9, dpi)
+    dpi <- ifelse(process == "survey", c(11,12), dpi)
 
 
     ## Shel: Edited this part after I kept getting the error: Error in open.connection(con, "rb") : HTTP error 500.
@@ -115,7 +116,7 @@ options(dplyr.summarise.inform=F)
 
     # if data process is estimate or register, then the ReferencePeriod field is empty
     # fill it in with TimeLabel
-    if (any(process %in% c("estimate", "register"))) {## Shel added any to remove the warning
+    if (any(process %in% c("estimate", "register", "survey"))) {## Shel added any to remove the warning
       dd_extract$ReferencePeriod <- dd_extract$TimeLabel
     }
 

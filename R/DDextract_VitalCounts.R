@@ -44,7 +44,7 @@
 #'}
 DDextract_VitalCounts <- function(locid,
                                   type = c("births","deaths"),
-                                  process = c("census","vr"),
+                                  process = c("census","vr","survey"),
                                   start_year,
                                   end_year,
                                   DataSourceShortName = NULL,
@@ -59,13 +59,16 @@ DDextract_VitalCounts <- function(locid,
     indicator_ids <- c(194, 195, 188)
   }
 
-  ## Indicate the data process id. dpi == 2 if process is census and 36 if process is vr
-  dpi <- ifelse(process == "census", 2, 36)
+  ## Indicate the data process type id. dpi == 2 if process is census and 9 if process is vr, 11 or 12 for surveys
+  dpi <- NULL
+  if ("census" %in% process)   dpi <- c(dpi, 2)
+  if ("vr" %in% process) dpi <- c(dpi, 9)
+  if ("survey" %in% process)   dpi <- c(dpi, 11, 12)
 
   ## Extract the data from the UNDP portal and return NULL if the data does not exist
   tryCatch({
     vital_counts <- DDSQLtools::get_recorddata(locIds = locid,
-                                   dataProcessIds = dpi, # Census or register
+                                   dataProcessTypeIds = dpi, # Census or register or survey
                                    indicatorIds = indicator_ids,
                                    startYear = start_year,
                                    endYear = end_year,
